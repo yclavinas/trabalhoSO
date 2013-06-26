@@ -1,3 +1,6 @@
-Program = pi 80 50 50 12
+Program = pi
+Max_Time = 01:05:00
+N_proc = 6
+Program = sqrt 80 50 50 12 54 667 3434 6565
 Max_Time = 00:05:00
-N_proc = 4
+N_proc = 2
