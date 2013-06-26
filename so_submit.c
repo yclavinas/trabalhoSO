@@ -3,44 +3,95 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
+
+
 
 typedef struct entrada{
-	char *nome;
-	void *args;
-	int tempo;
+	char proc[50];
+	int max_time;
 	int num_proc;
-	}entrada;
+}ENTRADA_T;
+
+
+void getValue(FILE **fp,char* str){
+
+	fscanf(*fp,"%s",str);
+	fscanf(*fp,"%s",str);getc(*fp);
+	fscanf(*fp,"%[^\n]s",str);
+
+}
+
+
+int std2sec(char *std_time){
+
+	char hr[3],min[3],sec[3];
+	int time;
+
+
+
+	strncpy(hr,std_time,2);
+	strncpy(min,std_time+3,2);
+	strncpy(sec,std_time+6,2);
+
+	hr[2] = 0;
+	min[2] = 0;
+	sec[2] = 0;
+
+	time = atoi(hr)*3600 + atoi(min)*60 + atoi(sec);
+
+
+	return time;
+
+}
+
+
+void printEntrada(ENTRADA_T entrada){
+
+	int i;
+
+	printf("Program = %s",entrada.proc);
+	printf("\nMax_Time = %d\n",entrada.max_time);
+	printf("N_proc = %d\n",entrada.num_proc);
+
+}
+
 
 int main (int argc, char* argv[]){
 	
 	FILE* fp;
-	char arq[50], conteudo[50];
-	entrada entrada;
-	int max_Time;
+	char arqName[50], temp[50];
+	int i,n_args;
+	ENTRADA_T entrada;
 	
-	strcpy(arq, argv[1]);
+	strcpy(arqName, argv[1]);
 
-	fp = fopen(arq, "r");
-	
-	/*acesso aos dados do arquivo*/
-	while(fscanf(fp, "%s",  conteudo) != EOF){
-		//printf("conteudo: %s\n",conteudo);	
-		
-		/*Para saber o que acessa*/
-		if(strcmp(conteudo, "Program") == 0){
-			fscanf(fp, "%s",  conteudo); /*pega o = e joga fora*/
-			fscanf(fp, "%s",  entrada.nome);/*pego o nome*/
-			fscanf(fp, "%[^\n]s",  (char *)entrada.args);/*pego o conteudo*/
-		}
-		if(strcmp(conteudo, "Max_Time") == 0){
-			fscanf(fp, "%s",  conteudo); /*pega o = e joga fora*/
-			fscanf(fp, "%d", max_time);/*pego o max_time*/
-		}
-		if(strcmp(conteudo, "Max_Time") == 0){
-			fscanf(fp, "%s",  conteudo); /*pega o = e joga fora*/
-			fscanf(fp, "%d",  num_proc);/*pego o max_time*/
-		}
+	fp = fopen(arqName, "r");
+	if(fp == NULL){
+		printf("Arquivo nao encontrado\n");
+		exit(-1);
+
 	}
-	
+
+	while(!feof(fp)){
+
+		getValue(&fp,entrada.proc);/*pega o nome do programa*/
+
+		getValue(&fp,temp);
+		entrada.max_time = std2sec(temp);/*Pega o valor do max_time e converte para segundos*/
+
+		getValue(&fp,temp);
+		entrada.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
+
+		printEntrada(entrada);/*Printa na tela o conteudo da entrada*/
+
+		
+
+	}
+
+
+
+
+	fclose(fp);
 	return 0;
 }

@@ -3,12 +3,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 
 
 
 typedef struct entrada{
-	char nome[50];
-	char **args;
+	char proc[50];
 	int max_time;
 	int num_proc;
 }ENTRADA_T;
@@ -17,51 +17,18 @@ typedef struct entrada{
 void getValue(FILE **fp,char* str){
 
 	fscanf(*fp,"%s",str);
-	fscanf(*fp,"%s",str);
-	fscanf(*fp,"%s",str);
+	fscanf(*fp,"%s",str);getc(*fp);
+	fscanf(*fp,"%[^\n]s",str);
 
 }
 
-int getArgs(FILE **fp,char ***args){
-
-	int i=0,n_args=0;
-	long pos;
-	char c;
-
-
-	pos = ftell(*fp);
-
-	while((c = getc(*fp)) != '\n'){
-		if(c == ' '){
-			n_args++;
-		}
-
-	}
-
-
-	fseek(*fp,pos,SEEK_SET);
-
-	*args = NULL;
-	*args = (char**)calloc(n_args,sizeof(char*));
-
-	(*args)[0] = NULL;
-	for(i=0;i<n_args;i++){
-		(*args)[i+1] = NULL;
-		(*args)[i] = (char*)calloc(50,sizeof(char));
-		fscanf(*fp,"%s",(*args)[i]);
-		
-	}
-
-
-	return n_args;
-	
-
-}
 
 int std2sec(char *std_time){
 
 	char hr[3],min[3],sec[3];
 	int time;
+
+
 
 	strncpy(hr,std_time,2);
 	strncpy(min,std_time+3,2);
@@ -83,10 +50,7 @@ void printEntrada(ENTRADA_T entrada){
 
 	int i;
 
-	printf("Program = %s",entrada.nome);
-	for(i=0;entrada.args[i];i++){
-		printf(" %s",entrada.args[i]);
-	}
+	printf("Program = %s",entrada.proc);
 	printf("\nMax_Time = %d\n",entrada.max_time);
 	printf("N_proc = %d\n",entrada.num_proc);
 
@@ -111,9 +75,7 @@ int main (int argc, char* argv[]){
 
 	while(!feof(fp)){
 
-		getValue(&fp,entrada.nome);/*pega o nome do programa*/
-
-		n_args = getArgs(&fp,&entrada.args);/*Pega os argumentos do programa e retorna o numero de argumentos total*/
+		getValue(&fp,entrada.proc);/*pega o nome do programa*/
 
 		getValue(&fp,temp);
 		entrada.max_time = std2sec(temp);/*Pega o valor do max_time e converte para segundos*/
