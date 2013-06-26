@@ -53,10 +53,9 @@ int std2sec(char *std_time){
 
 void printProcesso(PROCESSO_T processo){
 
-	int i;
 
 	printf("Program = %s",processo.proc);
-	printf("\nMax_Time = %d\n",processo.max_time);
+	printf("\nMax_Time = %s\n",processo.max_time);
 	printf("N_proc = %d\n",processo.num_proc);
 
 }
@@ -66,9 +65,12 @@ int main (int argc, char* argv[]){
 	
 	FILE* fp;
 	char arqName[50], temp[50];
-	int i,n_args;
 	PROCESSO_T processo;
 
+	if(argc == 1){
+		printf("Nenhum arquivo de entrada informado\n");
+		exit(-1);
+	}
 	
 	strcpy(arqName, argv[1]);
 
