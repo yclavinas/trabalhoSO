@@ -18,12 +18,14 @@ main()
      exit(1);
    }
 
-   if ((idshm = shmget(0x1223, sizeof(int), IPC_CREAT|0x1ff)) < 0)
+  	shmdt(idshm);
+
+	if ((idshm = shmget(0x1223, sizeof(long int), IPC_CREAT|0x1ff)) < 0)
    {
-     printf("erro na criacao da fila\n");
+     printf("erro na criacao da! fila\n");
      exit(1);
    }
-
+   
    /* cria processo filho */
    pid = fork();
    if (pid == 0)

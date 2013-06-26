@@ -4,10 +4,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+#include<sys/sem.h>
+#include<sys/shm.h>
 
 #define RUNNING 1
 #define PENDING 0
 
+int idsem;
+struct sembuf operacao[2];
 
 typedef struct processo{
 	int nreq;
@@ -16,7 +20,6 @@ typedef struct processo{
 	time_t start_time;
 	int status;
 	char proc[50];
-
 }PROCESSO_T;
 
 void getValue(FILE **fp,char* str){
@@ -60,12 +63,33 @@ void printProcesso(PROCESSO_T processo){
 
 }
 
+int p_sem(){
+     operacao[0].sem_num = 0;
+     operacao[0].sem_op = 0;
+     operacao[0].sem_flg = 0;
+     operacao[1].sem_num = 0;
+     operacao[1].sem_op = 1;
+     operacao[1].sem_flg = 0;
+     if ( semop(idsem, operacao, 2) < 0)
+       printf("erro no p=%d\n", errno);
+}
+
+int v_sem(){
+     operacao[0].sem_num = 0;
+     operacao[0].sem_op = -1;
+     operacao[0].sem_flg = 0;
+     if ( semop(idsem, operacao, 1) < 0)
+       printf("erro no p=%d\n", errno);
+}
+
 
 int main (int argc, char* argv[]){
 	
 	FILE* fp;
 	char arqName[50], temp[50];
-	PROCESSO_T processo;
+	PROCESSO_T processo, *p_aux;
+	int idshm;
+	int *pshm;
 
 	if(argc == 1){
 		printf("Nenhum arquivo de entrada informado\n");
@@ -78,9 +102,26 @@ int main (int argc, char* argv[]){
 	if(fp == NULL){
 		printf("Arquivo nao encontrado\n");
 		exit(-1);
-
 	}
 
+	/*da um shmget na mem compartilhada*/	
+	if ((idshm = shmget(0x090108094, sizeof(PROCESSO_T), IPC_CREAT|0x1ff)) < 0){
+	    printf("erro na criacao da fila\n");
+	    exit(1);
+	}
+	
+	/*da um attach na mem compartilhada*/
+	pshm = (int *) shmat(idshm, (char *)0, 0);
+	if (pshm == (int *)-1) {
+        printf("erro no attach\n");
+        exit(1);
+    }
+
+	/*da um semget em semaforo*/
+	if ((idsem = semget(0x090015266, 1, IPC_CREAT|0x1ff)) < 0){
+	     printf("erro na criacao da fila\n");
+	     exit(1);
+	}
 
 	getValue(&fp,processo.proc);/*pega o nome do programa*/
 	getValue(&fp,processo.max_time);/*Pega o tempo máximo de execução*/
@@ -88,12 +129,19 @@ int main (int argc, char* argv[]){
 	processo.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
 	processo.start_time = time(NULL);/*Pega o tempo de inicio da execução*/
 	processo.status = PENDING;
-
-
-		
+	processo.prox = NULL;
+	processo.ant = NULL;
+	
 	printProcesso(processo);	
 
-
+	p_sem();
+	if(phsm == NULL){
+		phsm = processo;
+	}
+	else{
+		
+	}
+	v_sem();
 
 
 
