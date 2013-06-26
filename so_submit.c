@@ -5,15 +5,19 @@
 #include <unistd.h>
 #include <time.h>
 
+#define RUNNING 1
+#define PENDING 0
 
 
 typedef struct processo{
-	char proc[50];
-	int max_time;
+	int nreq;
+	char max_time[9];
 	int num_proc;
 	time_t start_time;
-}PROCESSO_T;
+	int status;
+	char proc[50];
 
+}PROCESSO_T;
 
 void getValue(FILE **fp,char* str){
 
@@ -75,21 +79,18 @@ int main (int argc, char* argv[]){
 
 	}
 
-	while(!feof(fp)){
 
-		getValue(&fp,processo.proc);/*pega o nome do programa*/
-
-		getValue(&fp,temp);
-		processo.max_time = std2sec(temp);/*Pega o valor do max_time e converte para segundos*/
-
-		getValue(&fp,temp);
-		processo.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
+	getValue(&fp,processo.proc);/*pega o nome do programa*/
+	getValue(&fp,processo.max_time);/*Pega o tempo máximo de execução*/
+	getValue(&fp,temp);
+	processo.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
+	processo.start_time = time(NULL);/*Pega o tempo de inicio da execução*/
+	processo.status = PENDING;
 
 
-		processo.start_time = time(NULL);/*Pega o tempo de inicio da execução*/
 		
-		
-	}
+	printProcesso(processo);	
+
 
 
 
