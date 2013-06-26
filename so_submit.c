@@ -7,11 +7,12 @@
 
 
 
-typedef struct entrada{
+typedef struct processo{
 	char proc[50];
 	int max_time;
 	int num_proc;
-}ENTRADA_T;
+	time_t start_time;
+}PROCESSO_T;
 
 
 void getValue(FILE **fp,char* str){
@@ -46,13 +47,13 @@ int std2sec(char *std_time){
 }
 
 
-void printEntrada(ENTRADA_T entrada){
+void printProcesso(PROCESSO_T processo){
 
 	int i;
 
-	printf("Program = %s",entrada.proc);
-	printf("\nMax_Time = %d\n",entrada.max_time);
-	printf("N_proc = %d\n",entrada.num_proc);
+	printf("Program = %s",processo.proc);
+	printf("\nMax_Time = %d\n",processo.max_time);
+	printf("N_proc = %d\n",processo.num_proc);
 
 }
 
@@ -62,7 +63,8 @@ int main (int argc, char* argv[]){
 	FILE* fp;
 	char arqName[50], temp[50];
 	int i,n_args;
-	ENTRADA_T entrada;
+	PROCESSO_T processo;
+
 	
 	strcpy(arqName, argv[1]);
 
@@ -75,18 +77,18 @@ int main (int argc, char* argv[]){
 
 	while(!feof(fp)){
 
-		getValue(&fp,entrada.proc);/*pega o nome do programa*/
+		getValue(&fp,processo.proc);/*pega o nome do programa*/
 
 		getValue(&fp,temp);
-		entrada.max_time = std2sec(temp);/*Pega o valor do max_time e converte para segundos*/
+		processo.max_time = std2sec(temp);/*Pega o valor do max_time e converte para segundos*/
 
 		getValue(&fp,temp);
-		entrada.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
+		processo.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
 
-		printEntrada(entrada);/*Printa na tela o conteudo da entrada*/
 
+		processo.start_time = time(NULL);/*Pega o tempo de inicio da execução*/
 		
-
+		
 	}
 
 
