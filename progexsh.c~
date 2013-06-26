@@ -19,18 +19,12 @@ main()
      exit(1);
    }
 
-   if ((idshm = shmget(0x1223, sizeof(int), IPC_CREAT|0x1ff)) < 0)
-   {
-     printf("erro na criacao da fila\n");
-     exit(1);
-   }
-
    /* cria processo filho */
    pid = fork();
    if (pid == 0)
    {
      /* codigo do filho */
-     pshm = (int *) shmat(idshm, (char *)0, 0);
+     pshm = (int *) shmget(0x1223, sizeof(int), IPC_CREAT|0X1FF));
      if (pshm == (int *)-1) 
      {
        printf("erro no attach\n");
