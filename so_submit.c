@@ -12,6 +12,7 @@
 #define RUNNING 1
 #define PENDING 0
 #define NUM_TAB 50
+#define PODE_ESCREVER 0
 
 int idsem;
 struct sembuf operacao[1];
@@ -84,7 +85,7 @@ int main (int argc, char* argv[]){
 	FILE* fp;
 	char arqName[50], temp[50];
 	PROCESSO_T tab_processo[NUM_TAB], aux;
-	int idshm;
+	int idshm, id2shm, p2shm;
 	PROCESSO_T *pshm,*paux;
 	int i = 0;
 
@@ -113,6 +114,19 @@ int main (int argc, char* argv[]){
         printf("erro no attach\n");
         exit(1);
     }
+	
+	/*da um attach na mem compartilhada de bloqueio para ver se pode escrever ou nao*/
+	p2shm = (int *) shmat(id2shm, (char *)0, 0);
+	if (p2shm == (int *)-1){
+        printf("erro no attach\n");
+        exit(1);
+    }
+
+	/*da um semget em semaforo*/
+	if ((idsem = semget(90015266, 1, IPC_CREAT|0x1ff)) < 0){
+	     printf("erro na criacao do semaforo\n");
+	     exit(1);
+	}
 
 
     /*da um semget em semaforo*/
@@ -133,44 +147,23 @@ int main (int argc, char* argv[]){
 
 	p_sem();
 
-		i=0;
+		if(p2shm == PODE_ESCREVER){
+			i=0;
 		
-		paux = pshm;
-		while(paux[i].nreq != 0 ){
-			i++;
+			paux = pshm;
+			while(paux[i].nreq != 0 ){
+				i++;
+			}
+
+			paux[i].nreq = 15;//ainda temos que arrumar isso
+			strcpy(paux[i].max_time,aux.max_time);
+			paux[i].num_proc = aux.num_proc;
+			paux[i].start_time = aux.start_time;
+			paux[i].status = aux.status;
+		   	strcpy(paux[i].proc,aux.proc); 
 		}
-
-		paux[i].nreq = 15;
-		strcpy(paux[i].max_time,aux.max_time);
-		paux[i].num_proc = aux.num_proc;
-		paux[i].start_time = aux.start_time;
-		paux[i].status = aux.status;
-		strcpy(paux[i].proc,aux.proc); 
-
-	v_sem();
-
-	p_sem();
 		
-		i=0;
-
-		paux = pshm;
-		while(paux[i].nreq != 0 ){
-			i++;
-		}
-
-		paux[i].nreq = 16;
-		strcpy(paux[i].max_time,aux.max_time);
-		paux[i].num_proc = aux.num_proc;
-		paux[i].start_time = aux.start_time;
-		paux[i].status = aux.status;
-		strcpy(paux[i].proc,aux.proc); 
-
 	v_sem();
-
-
-
-
-	printf("%d\t%d\n",pshm->nreq,(pshm+13)->nreq);
 
 
 	fclose(fp);
