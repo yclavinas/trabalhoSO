@@ -14,6 +14,27 @@
 int idsem;
 struct sembuf operacao[2];
 
+int p_sem(){
+	printf("entrou no p\n");
+     operacao[0].sem_num = 0;
+     operacao[0].sem_op = 0;
+     operacao[0].sem_flg = 0;
+     operacao[1].sem_num = 0;
+     operacao[1].sem_op = 1;
+     operacao[1].sem_flg = 0;
+     if ( semop(idsem, operacao, 2) < 0)
+       printf("erro no p=%d\n", errno);
+}
+
+int v_sem(){
+		printf("entrou no v\n");
+     operacao[0].sem_num = 0;
+     operacao[0].sem_op = -1;
+     operacao[0].sem_flg = 0;
+     if ( semop(idsem, operacao, 1) < 0)
+       printf("erro no p=%d\n", errno);
+}
+
 typedef struct processo{
 	int nreq;
 	char max_time[9];
@@ -37,8 +58,6 @@ int std2sec(char *std_time){
 	char hr[3],min[3],sec[3];
 	int time;
 
-
-
 	strncpy(hr,std_time,2);
 	strncpy(min,std_time+3,2);
 	strncpy(sec,std_time+6,2);
@@ -49,46 +68,26 @@ int std2sec(char *std_time){
 
 	time = atoi(hr)*3600 + atoi(min)*60 + atoi(sec);
 
-
 	return time;
-
 }
 
 
-void printProcesso(PROCESSO_T processo){
-	printf("Program = %s",processo.proc);
-	printf("\nMax_Time = %s\n",processo.max_time);
-	printf("N_proc = %d\n",processo.num_proc);
-	printf("ah");
+void printProcesso(PROCESSO_T processo1){
+	printf("Program = %s",processo1.proc);
+	printf("\nMax_Time = %s\n",processo1.max_time);
+	printf("N_proc = %d\n",processo1.num_proc);
 }
 
-int p_sem(){
-     operacao[0].sem_num = 0;
-     operacao[0].sem_op = 0;
-     operacao[0].sem_flg = 0;
-     operacao[1].sem_num = 0;
-     operacao[1].sem_op = 1;
-     operacao[1].sem_flg = 0;
-     if ( semop(idsem, operacao, 2) < 0)
-       printf("erro no p=%d\n", errno);
-}
 
-int v_sem(){
-     operacao[0].sem_num = 0;
-     operacao[0].sem_op = -1;
-     operacao[0].sem_flg = 0;
-     if ( semop(idsem, operacao, 1) < 0)
-       printf("erro no p=%d\n", errno);
-}
 
 
 int main (int argc, char* argv[]){
 	
 	FILE* fp;
 	char arqName[50], temp[50];
-	PROCESSO_T processo[NUM_TAB], aux;
+	PROCESSO_T tab_processo[NUM_TAB], aux;
 	int idshm;
-	int *pshm;
+	PROCESSO_T *pshm;
 	int i = 0;
 
 	if(argc == 1){
@@ -105,21 +104,21 @@ int main (int argc, char* argv[]){
 	}
 
 	/*da um shmget na mem compartilhada*/	
-	if ((idshm = shmget(0x0901080942, NUM_TAB*sizeof(struct processo), IPC_CREAT|0x1ff)) < 0){
+	if ((idshm = shmget(90108094, NUM_TAB*sizeof(struct processo), IPC_CREAT|0x1ff)) < 0){
 	    printf("erro na criacao da memoria compartilhada\n");
 	    exit(1);
 	}
 	
 	/*da um attach na mem compartilhada*/
-	pshm = (int *) shmat(idshm, (char *)0, 0);
-	if (pshm == (int *)-1) {
+	pshm = (struct processo *) shmat(idshm, (char *)0, 0);
+	if (pshm == (struct processo *)-1) {
         printf("erro no attach\n");
         exit(1);
     }
 
 	/*da um semget em semaforo*/
-	if ((idsem = semget(0x090015266, 1, IPC_CREAT|0x1ff)) < 0){
-	     printf("erro na criacao da fila\n");
+	if ((idsem = semget(90015266, 1, IPC_CREAT|0x1ff)) < 0){
+	     printf("erro na criacao do semaforo\n");
 	     exit(1);
 	}
 
@@ -131,8 +130,15 @@ int main (int argc, char* argv[]){
 	aux.status = PENDING;
 	
 	printProcesso(aux);	
-
-	
+	printf("nao entrou\n");
+	p_sem();
+	printf("tá aqui dentro\n");
+		while(tab_processo[i].proc != NULL){
+			i++;
+			printf("nao saio daqui\n");
+		}
+		tab_processo[i] = aux;
+	v_sem();
 
 
 
