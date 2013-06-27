@@ -12,7 +12,7 @@
 #define RUNNING 1
 #define PENDING 0
 #define NUM_TAB 50
-#define PODE_ESCREVER 0
+#define NAO_PODE_ESCREVER -1
 
 int idsem;
 struct sembuf operacao[1];
@@ -85,7 +85,7 @@ int main (int argc, char* argv[]){
 	FILE* fp;
 	char arqName[50], temp[50];
 	PROCESSO_T tab_processo[NUM_TAB], aux;
-	int idshm, id2shm, p2shm;
+	int idshm, id2shm, *p2shm;
 	PROCESSO_T *pshm,*paux;
 	int i = 0;
 
@@ -114,6 +114,12 @@ int main (int argc, char* argv[]){
         printf("erro no attach\n");
         exit(1);
     }
+
+	/*da um shmget na mem compartilhada de bloqueio*/	
+	if ((id2shm = shmget(90108094, sizeof(int), IPC_CREAT|0x1ff)) < 0){
+	    printf("erro na criacao da memoria compartilhada\n");
+	    exit(1);
+	}
 	
 	/*da um attach na mem compartilhada de bloqueio para ver se pode escrever ou nao*/
 	p2shm = (int *) shmat(id2shm, (char *)0, 0);
@@ -121,6 +127,8 @@ int main (int argc, char* argv[]){
         printf("erro no attach\n");
         exit(1);
     }
+
+	
 
 	/*da um semget em semaforo para cria-lo*/
 	if ((idsem = semget(90015266, 1, IPC_CREAT|0x1ff)) < 0){
@@ -144,10 +152,11 @@ int main (int argc, char* argv[]){
 
 
 	/*printProcesso(aux);*/	
-
+	printf("p2shm: %d\n", *p2shm);
+	exit(0);
 	p_sem();
 
-		if(p2shm == PODE_ESCREVER){
+		if(p2shm != NAO_PODE_ESCREVER){
 			i=0;
 		
 			paux = pshm;
