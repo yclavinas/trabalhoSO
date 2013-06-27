@@ -1,33 +1,31 @@
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
-#include<sys/sem.h>
-#include<sys/shm.h>
+#include <sys/sem.h>
+#include <sys/shm.h>
 
 #define RUNNING 1
 #define PENDING 0
 #define NUM_TAB 50
 
 int idsem;
-struct sembuf operacao[2];
+struct sembuf operacao[1];
 
-int p_sem(){
-	printf("entrou no p\n");
+int p_sem()
+{
      operacao[0].sem_num = 0;
-     operacao[0].sem_op = 0;
+     operacao[0].sem_op = 1;
      operacao[0].sem_flg = 0;
-     operacao[1].sem_num = 0;
-     operacao[1].sem_op = 1;
-     operacao[1].sem_flg = 0;
-     if ( semop(idsem, operacao, 2) < 0)
+     if ( semop(idsem, operacao, 1) < 0)
        printf("erro no p=%d\n", errno);
 }
-
-int v_sem(){
-		printf("entrou no v\n");
+int v_sem()
+{
      operacao[0].sem_num = 0;
      operacao[0].sem_op = -1;
      operacao[0].sem_flg = 0;
@@ -82,19 +80,19 @@ void printProcesso(PROCESSO_T processo1){
 
 
 int main (int argc, char* argv[]){
-	
+
 	FILE* fp;
 	char arqName[50], temp[50];
 	PROCESSO_T tab_processo[NUM_TAB], aux;
 	int idshm;
-	PROCESSO_T *pshm;
+	PROCESSO_T *pshm,*paux;
 	int i = 0;
 
 	if(argc == 1){
 		printf("Nenhum arquivo de entrada informado\n");
 		exit(-1);
 	}
-	
+
 	strcpy(arqName, argv[1]);
 
 	fp = fopen(arqName, "r");
@@ -108,7 +106,7 @@ int main (int argc, char* argv[]){
 	    printf("erro na criacao da memoria compartilhada\n");
 	    exit(1);
 	}
-	
+
 	/*da um attach na mem compartilhada*/
 	pshm = (struct processo *) shmat(idshm, (char *)0, 0);
 	if (pshm == (struct processo *)-1) {
@@ -116,7 +114,8 @@ int main (int argc, char* argv[]){
         exit(1);
     }
 
-	/*da um semget em semaforo*/
+
+    /*da um semget em semaforo*/
 	if ((idsem = semget(90015266, 1, IPC_CREAT|0x1ff)) < 0){
 	     printf("erro na criacao do semaforo\n");
 	     exit(1);
@@ -128,18 +127,49 @@ int main (int argc, char* argv[]){
 	aux.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
 	aux.start_time = time(NULL);/*Pega o tempo de inicio da execução*/
 	aux.status = PENDING;
-	
-	printProcesso(aux);	
-	printf("nao entrou\n");
+
+	/*printProcesso(aux);*/	
+
 	p_sem();
-	printf("tá aqui dentro\n");
-		while(tab_processo[i].proc != NULL){
+
+		i=0;
+		
+		paux = pshm;
+		while(paux[i].nreq != 0 ){
 			i++;
-			printf("nao saio daqui\n");
 		}
-		tab_processo[i] = aux;
+
+		paux[i].nreq = 15;
+		strcpy(paux[i].max_time,aux.max_time);
+		paux[i].num_proc = aux.num_proc;
+		paux[i].start_time = aux.start_time;
+		paux[i].status = aux.status;
+		strcpy(paux[i].proc,aux.proc); 
+
 	v_sem();
 
+	p_sem();
+		
+		i=0;
+
+		paux = pshm;
+		while(paux[i].nreq != 0 ){
+			i++;
+		}
+
+		paux[i].nreq = 16;
+		strcpy(paux[i].max_time,aux.max_time);
+		paux[i].num_proc = aux.num_proc;
+		paux[i].start_time = aux.start_time;
+		paux[i].status = aux.status;
+		strcpy(paux[i].proc,aux.proc); 
+
+	v_sem();
+
+
+
+
+	printf("%d\t%d\n",pshm->nreq,(pshm+13)->nreq);
 
 
 	fclose(fp);

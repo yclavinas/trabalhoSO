@@ -1,10 +1,10 @@
-#include<errno.h>
-#include<sys/types.h>
-#include<sys/ipc.h>
-#include<sys/sem.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
 #include <string.h>
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 struct sembuf operacao[2];
 int idsem;
@@ -28,6 +28,9 @@ int v_sem()
      if ( semop(idsem, operacao, 1) < 0)
        printf("erro no p=%d\n", errno);
 }
+
+
+
 main()
 {
    int pid, estado;
