@@ -9,6 +9,7 @@
 
 #define RUNNING 1
 #define PENDING 0
+#define NUM_TAB 50
 
 int idsem;
 struct sembuf operacao[2];
@@ -55,12 +56,10 @@ int std2sec(char *std_time){
 
 
 void printProcesso(PROCESSO_T processo){
-
-
 	printf("Program = %s",processo.proc);
 	printf("\nMax_Time = %s\n",processo.max_time);
 	printf("N_proc = %d\n",processo.num_proc);
-
+	printf("ah");
 }
 
 int p_sem(){
@@ -87,9 +86,10 @@ int main (int argc, char* argv[]){
 	
 	FILE* fp;
 	char arqName[50], temp[50];
-	PROCESSO_T processo, *p_aux;
+	PROCESSO_T processo[NUM_TAB], aux;
 	int idshm;
 	int *pshm;
+	int i = 0;
 
 	if(argc == 1){
 		printf("Nenhum arquivo de entrada informado\n");
@@ -105,8 +105,8 @@ int main (int argc, char* argv[]){
 	}
 
 	/*da um shmget na mem compartilhada*/	
-	if ((idshm = shmget(0x090108094, sizeof(PROCESSO_T), IPC_CREAT|0x1ff)) < 0){
-	    printf("erro na criacao da fila\n");
+	if ((idshm = shmget(0x0901080942, NUM_TAB*sizeof(struct processo), IPC_CREAT|0x1ff)) < 0){
+	    printf("erro na criacao da memoria compartilhada\n");
 	    exit(1);
 	}
 	
@@ -123,25 +123,16 @@ int main (int argc, char* argv[]){
 	     exit(1);
 	}
 
-	getValue(&fp,processo.proc);/*pega o nome do programa*/
-	getValue(&fp,processo.max_time);/*Pega o tempo máximo de execução*/
+	getValue(&fp,aux.proc);/*pega o nome do programa*/
+	getValue(&fp,aux.max_time);/*Pega o tempo máximo de execução*/
 	getValue(&fp,temp);
-	processo.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
-	processo.start_time = time(NULL);/*Pega o tempo de inicio da execução*/
-	processo.status = PENDING;
-	processo.prox = NULL;
-	processo.ant = NULL;
+	aux.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
+	aux.start_time = time(NULL);/*Pega o tempo de inicio da execução*/
+	aux.status = PENDING;
 	
-	printProcesso(processo);	
+	printProcesso(aux);	
 
-	p_sem();
-	if(phsm == NULL){
-		phsm = processo;
-	}
-	else{
-		
-	}
-	v_sem();
+	
 
 
 
