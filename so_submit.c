@@ -128,6 +128,7 @@ int main (int argc, char* argv[]){
 	aux.start_time = time(NULL);/*Pega o tempo de inicio da execução*/
 	aux.status = PENDING;
 
+
 	/*printProcesso(aux);*/	
 
 	p_sem();
