@@ -122,14 +122,14 @@ int main (int argc, char* argv[]){
         exit(1);
     }
 
-	/*da um semget em semaforo*/
+	/*da um semget em semaforo para cria-lo*/
 	if ((idsem = semget(90015266, 1, IPC_CREAT|0x1ff)) < 0){
 	     printf("erro na criacao do semaforo\n");
 	     exit(1);
 	}
 
 
-    /*da um semget em semaforo*/
+    /*da um semget em semaforo para ter acesso */
 	if ((idsem = semget(90015266, 1, IPC_CREAT|0x1ff)) < 0){
 	     printf("erro na criacao do semaforo\n");
 	     exit(1);
