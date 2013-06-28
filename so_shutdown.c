@@ -12,6 +12,7 @@
 #define NAO_PODE_ESCREVER -1
 
 int idsem;
+struct sembuf operacao[1];
 
 struct mensagem{
      long pid;
@@ -25,6 +26,7 @@ int p_sem(){
      if ( semop(idsem, operacao, 1) < 0)
        printf("erro no p=%d\n", errno);
 }
+
 int v_sem(){
      operacao[0].sem_num = 0;
      operacao[0].sem_op = -1;
@@ -42,24 +44,24 @@ void destroy_IPCS(int id2shm){
 
 	/*Pegar o id para a area de mem compartilhada*/	
 	if ((idshm = shmget(90108094, sizeof(int), 0x1ff)) < 0){
-	    printf("erro na criacao da memoria compartilhada\n");
+	    printf("erro na criacao da memoria compartilhada idshm\n");
 	    exit(1);
 	}
 	
 	/*da um msgget na fila para ter acesso */
-	if ((idfila = msgget(90014255, 0x1ff) < 0){
-	     printf("erro no acesso fila\n");
-	     exit(1);
-	   }
+	//if (idfila = msgget(90014255, 0x1ff) < 0){
+	     //printf("erro no acesso fila\n");
+	     //exit(1);
+	//}
 	
 	shmctl(idshm,IPC_RMID, buf);
 	shmctl(id2shm,IPC_RMID, buf);
 	semctl(idsem,1,IPC_RMID, buf);
 	
 	/*Loop para acabar com os processos que estão em execucao, dando kill com o pid que pegarei da fila de msg*/
-	while(msgrcv(idfila, &mensagem_rec, sizeof(mensagem_rec)-sizeof(long), 0, IPC_NOWAIT) != NULL){
-		kill(mensagem_rec.pid_process0, 9);
-	}
+	//while(msgrcv(idfila, &mensagem_rec, sizeof(mensagem_rec)-sizeof(long), 0, IPC_NOWAIT) != NULL){
+		//kill(mensagem_rec.pid_process, 9);
+	//}
 	
 	//tem que dar ctl na fila
 	
@@ -75,8 +77,8 @@ int main(){
 	/*signal(SIGALRM, destroy_IPCS);*/
 	
 	/*Pegar o id para a area de mem compartilhada*/
-	if ((id2shm = shmget(90108094, sizeof(int), 0x1ff)) < 0){
-	    printf("erro na criacao da memoria compartilhada\n");
+	if ((id2shm = shmget(90108012, sizeof(int), 0x1ff)) < 0){
+	    printf("erro na criacao da memoria compartilhada id2shm\n");
 	    exit(1);
 	}
 	
@@ -98,9 +100,9 @@ int main(){
 		*p2shm = NAO_PODE_ESCREVER;
 	v_sem();	
 	
-	sleep(120);	
+	sleep(4);	
 	
-	destroy_IPCS(int id2shm);
+	destroy_IPCS(id2shm);
 	
 	return(0);
 }

@@ -116,7 +116,7 @@ int main (int argc, char* argv[]){
     }
 
 	/*da um shmget na mem compartilhada de bloqueio*/	
-	if ((id2shm = shmget(90108094, sizeof(int), IPC_CREAT|0x1ff)) < 0){
+	if ((id2shm = shmget(90108012, sizeof(int), IPC_CREAT|0x1ff)) < 0){
 	    printf("erro na criacao da memoria compartilhada\n");
 	    exit(1);
 	}
