@@ -1,11 +1,11 @@
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
 
@@ -13,6 +13,16 @@
 #define PENDING 0
 #define NUM_TAB 50
 #define NAO_PODE_ESCREVER -1
+
+
+typedef struct processo{
+	int nreq;
+	char max_time[9];
+	int num_proc;
+	time_t start_time;
+	int status;
+	char proc[50];
+}PROCESSO_T;
 
 int idsem;
 struct sembuf operacao[1];
@@ -32,23 +42,6 @@ int v_sem()
      operacao[0].sem_flg = 0;
      if ( semop(idsem, operacao, 1) < 0)
        printf("erro no p=%d\n", errno);
-}
-
-typedef struct processo{
-	int nreq;
-	char max_time[9];
-	int num_proc;
-	time_t start_time;
-	int status;
-	char proc[50];
-}PROCESSO_T;
-
-void getValue(FILE **fp,char* str){
-
-	fscanf(*fp,"%s",str);
-	fscanf(*fp,"%s",str);getc(*fp);
-	fscanf(*fp,"%[^\n]s",str);
-
 }
 
 
@@ -71,36 +64,27 @@ int std2sec(char *std_time){
 }
 
 
-void printProcesso(PROCESSO_T processo1){
-	printf("Program = %s",processo1.proc);
-	printf("\nMax_Time = %s\n",processo1.max_time);
-	printf("N_proc = %d\n",processo1.num_proc);
-}
 
 
 
+int main(int argc,char* argv[]){
 
-int main (int argc, char* argv[]){
 
-	FILE* fp;
-	char arqName[50], temp[50];
-	PROCESSO_T tab_processo[NUM_TAB], aux;
+	int max_proc,processos_running;
 	int idshm, id2shm, *p2shm;
 	PROCESSO_T *pshm,*paux;
-	int i = 0;
+	struct tm * timeinfo;
+	char start_time[50];
+	int i;
+
 
 	if(argc == 1){
-		printf("Nenhum arquivo de entrada informado\n");
+		printf("Numero maximo de processos nao informado\n");
 		exit(-1);
 	}
 
-	strcpy(arqName, argv[1]);
-
-	fp = fopen(arqName, "r");
-	if(fp == NULL){
-		printf("Arquivo nao encontrado\n");
-		exit(-1);
-	}
+	max_proc = atoi(argv[1]);
+	processos_running = 0;
 
 	/*da um shmget na mem compartilhada*/	
 	if ((idshm = shmget(90108094, NUM_TAB*sizeof(struct processo), IPC_CREAT|0x1ff)) < 0){
@@ -143,64 +127,29 @@ int main (int argc, char* argv[]){
 	     exit(1);
 	}
 
-	getValue(&fp,aux.proc);/*pega o nome do programa*/
-	getValue(&fp,aux.max_time);/*Pega o tempo máximo de execução*/
-	getValue(&fp,temp);
-	aux.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
-	aux.start_time = time(NULL);/*Pega o tempo de inicio da execução*/
-	aux.status = PENDING;
-
-
-	/*printProcesso(aux);*/	
-	printf("p2shm: %d\n", *p2shm);
-	/*exit(0);*/
 	p_sem();
 
-		if(*p2shm != NAO_PODE_ESCREVER){
-			i=0;
-		
-			paux = pshm;
-			while(paux[i].nreq != 0 ){
-				i++;
-			}
-
-			paux[i].nreq = 15;//ainda temos que arrumar isso
-			strcpy(paux[i].max_time,aux.max_time);
-			paux[i].num_proc = aux.num_proc;
-			paux[i].start_time = aux.start_time;
-			paux[i].status = aux.status;
-		   	strcpy(paux[i].proc,aux.proc); 
-		}
-		
-
-	v_sem();
-
-	p_sem();
-		
-		i=0;
-
-		paux = pshm;
-		while(paux[i].nreq != 0 ){
-			i++;
-		}
-
-		paux[i].nreq = 39;
-		strcpy(paux[i].max_time,aux.max_time);
-		paux[i].num_proc = aux.num_proc;
-		paux[i].start_time = aux.start_time;
-		paux[i].status = aux.status;
-		strcpy(paux[i].proc,aux.proc); 
-
-	v_sem();
-
-
-	for (i = 0; i < NUM_TAB; ++i)
+	for (i = 0; i < NUM_TAB; i++)
 	{
-		printf("%d\n",pshm[i].nreq);
+
+		timeinfo = localtime(&pshm[i].start_time);
+		strftime(start_time,50,"%X",timeinfo);
+
+		printf("%s\n",start_time);
 	}
 
+	v_sem();
 
 
-	fclose(fp);
+
+
+
+
+
+
+
+
+
+
 	return 0;
 }
