@@ -18,7 +18,7 @@ main()
    signal(SIGUSR2, funcao_sigusr2);
 
    //kill(getpid(), SIGUSR1);
-   kill(getpid(), SIGUSR2);
+   //kill(getpid(), SIGUSR2);
 
 sleep(10);
 }
