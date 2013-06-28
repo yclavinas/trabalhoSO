@@ -128,20 +128,12 @@ int main (int argc, char* argv[]){
         exit(1);
     }
 
-	
-
 	/*da um semget em semaforo para cria-lo*/
 	if ((idsem = semget(90015266, 1, IPC_CREAT|0x1ff)) < 0){
 	     printf("erro na criacao do semaforo\n");
 	     exit(1);
 	}
 
-
-    /*da um semget em semaforo para ter acesso */
-	if ((idsem = semget(90015266, 1, IPC_CREAT|0x1ff)) < 0){
-	     printf("erro na criacao do semaforo\n");
-	     exit(1);
-	}
 
 	getValue(&fp,aux.proc);/*pega o nome do programa*/
 	getValue(&fp,aux.max_time);/*Pega o tempo máximo de execução*/
@@ -152,8 +144,7 @@ int main (int argc, char* argv[]){
 
 
 	/*printProcesso(aux);*/	
-	
-	/*exit(0);*/
+
 	p_sem();
 
 		if(*p2shm != NAO_PODE_ESCREVER){
