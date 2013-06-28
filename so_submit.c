@@ -144,18 +144,10 @@ int main (int argc, char* argv[]){
 
 
 	/*printProcesso(aux);*/	
-<<<<<<< HEAD
-	
-	p_sem();
 
-		if(p2shm != (int *)NAO_PODE_ESCREVER){
-=======
-	printf("p2shm: %d\n", *p2shm);
-	/*exit(0);*/
 	p_sem();
 
 		if(*p2shm != NAO_PODE_ESCREVER){
->>>>>>> e9631fba41b8307e338bff8904358956ba451f35
 			i=0;
 		
 			paux = pshm;
