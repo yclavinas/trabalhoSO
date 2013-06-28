@@ -158,7 +158,25 @@ int main (int argc, char* argv[]){
 			i++;
 		}
 
-		paux[i].nreq = 16;
+		paux[i].nreq = 52;
+		strcpy(paux[i].max_time,aux.max_time);
+		paux[i].num_proc = aux.num_proc;
+		paux[i].start_time = aux.start_time;
+		paux[i].status = aux.status;
+		strcpy(paux[i].proc,aux.proc); 
+
+	v_sem();
+
+	p_sem();
+		
+		i=0;
+
+		paux = pshm;
+		while(paux[i].nreq != 0 ){
+			i++;
+		}
+
+		paux[i].nreq = 39;
 		strcpy(paux[i].max_time,aux.max_time);
 		paux[i].num_proc = aux.num_proc;
 		paux[i].start_time = aux.start_time;
@@ -168,9 +186,14 @@ int main (int argc, char* argv[]){
 	v_sem();
 
 
+	for (i = 0; i < NUM_TAB; ++i)
+	{
+		printf("%d\n",pshm[i].nreq);
+	}
 
 
-	printf("%d\t%d\n",pshm->nreq,(pshm+13)->nreq);
+
+	
 
 
 	fclose(fp);
