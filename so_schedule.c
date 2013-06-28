@@ -80,7 +80,7 @@ int str2sec(char *std_time){
 
 
 void scheduler(){
-	
+
 	int i, nreq_escolhido=0;
 	int max_time,start_time,current_time,menor_tempo=99999;
 	char time_str[9];
@@ -91,10 +91,12 @@ void scheduler(){
 
 	p_sem();
 
+
 		if(proc_livres > 0){
 			for(i=0;i<NUM_TAB;i++){
 				if((pshm[i].nreq != 0)&&(pshm[i].status == PENDING)){
 				
+
 
 					max_time = str2sec(pshm[i].max_time);
 
