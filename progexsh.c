@@ -1,7 +1,8 @@
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
+#include<errno.h>
+#include<sys/types.h>
+#include<sys/ipc.h>
 #include <sys/shm.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -18,14 +19,12 @@ main()
      exit(1);
    }
 
-  	shmdt(idshm);
-
-	if ((idshm = shmget(0x1223, sizeof(long int), IPC_CREAT|0x1ff)) < 0)
+   if ((idshm = shmget(0x1223, sizeof(int), IPC_CREAT|0x1ff)) < 0)
    {
-     printf("erro na criacao da! fila\n");
+     printf("erro na criacao da fila\n");
      exit(1);
    }
-   
+
    /* cria processo filho */
    pid = fork();
    if (pid == 0)
