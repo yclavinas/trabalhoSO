@@ -152,7 +152,7 @@ int main (int argc, char* argv[]){
 
 
 	/*printProcesso(aux);*/	
-	printf("p2shm: %d\n", *p2shm);
+	
 	/*exit(0);*/
 	p_sem();
 
@@ -192,13 +192,6 @@ int main (int argc, char* argv[]){
 		strcpy(paux[i].proc,aux.proc); 
 
 	v_sem();
-
-
-	for (i = 0; i < NUM_TAB; ++i)
-	{
-		printf("%d\n",pshm[i].nreq);
-	}
-
 
 
 	fclose(fp);
