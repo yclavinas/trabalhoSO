@@ -17,6 +17,21 @@
 int idsem;
 struct sembuf operacao[1];
 
+typedef struct processo{
+	int nreq;
+	char max_time[9];
+	int num_proc;
+	time_t start_time;
+	int status;
+	char proc[50];
+}PROCESSO_T;
+
+typedef struct info{
+	int write_permission;
+	int last_nreq;
+
+}INFO_T;
+
 int p_sem()
 {
      operacao[0].sem_num = 0;
@@ -34,14 +49,7 @@ int v_sem()
        printf("erro no p=%d\n", errno);
 }
 
-typedef struct processo{
-	int nreq;
-	char max_time[9];
-	int num_proc;
-	time_t start_time;
-	int status;
-	char proc[50];
-}PROCESSO_T;
+
 
 void getValue(FILE **fp,char* str){
 
@@ -85,7 +93,8 @@ int main (int argc, char* argv[]){
 	FILE* fp;
 	char arqName[50], temp[50];
 	PROCESSO_T tab_processo[NUM_TAB], aux;
-	int idshm, id2shm, *p2shm;
+	int idshm, id2shm;
+	INFO_T *p2shm;
 	PROCESSO_T *pshm,*paux;
 	int i = 0;
 
@@ -116,14 +125,14 @@ int main (int argc, char* argv[]){
     }
 
 	/*da um shmget na mem compartilhada de bloqueio*/	
-	if ((id2shm = shmget(90108012, sizeof(int), IPC_CREAT|0x1ff)) < 0){
+	if ((id2shm = shmget(90108012, sizeof(INFO_T), IPC_CREAT|0x1ff)) < 0){
 	    printf("erro na criacao da memoria compartilhada\n");
 	    exit(1);
 	}
 
 	/*da um attach na mem compartilhada de bloqueio para ver se pode escrever ou nao*/
-	p2shm = (int *) shmat(id2shm, (char *)0, 0);
-	if (p2shm == (int *)-1){
+	p2shm = (INFO_T *) shmat(id2shm, (char *)0, 0);
+	if (p2shm == (INFO_T *)-1){
         printf("erro no attach\n");
         exit(1);
     }
@@ -136,10 +145,10 @@ int main (int argc, char* argv[]){
 
 
 	getValue(&fp,aux.proc);/*pega o nome do programa*/
-	getValue(&fp,aux.max_time);/*Pega o tempo m‡ximo de execu‹o*/
+	getValue(&fp,aux.max_time);/*Pega o tempo m‡ximo de execucao*/
 	getValue(&fp,temp);
 	aux.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
-	aux.start_time = time(NULL);/*Pega o tempo de inicio da execu‹o*/
+	aux.start_time = time(NULL);/*Pega o tempo de inicio da execucao*/
 	aux.status = PENDING;
 
 
@@ -147,7 +156,7 @@ int main (int argc, char* argv[]){
 
 	p_sem();
 
-		if(*p2shm != NAO_PODE_ESCREVER){
+		if(p2shm->write_permission != NAO_PODE_ESCREVER){
 			i=0;
 
 			paux = pshm;
@@ -155,7 +164,7 @@ int main (int argc, char* argv[]){
 				i++;
 			}
 
-			paux[i].nreq = 15;//ainda temos que arrumar isso
+			paux[i].nreq = ++p2shm->last_nreq;//ainda temos que arrumar isso
 			strcpy(paux[i].max_time,aux.max_time);
 			paux[i].num_proc = aux.num_proc;
 			paux[i].start_time = aux.start_time;
@@ -165,25 +174,6 @@ int main (int argc, char* argv[]){
 
 
 	v_sem();
-
-	p_sem();
-
-		i=0;
-
-		paux = pshm;
-		while(paux[i].nreq != 0 ){
-			i++;
-		}
-
-		paux[i].nreq = 39;
-		strcpy(paux[i].max_time,aux.max_time);
-		paux[i].num_proc = aux.num_proc;
-		paux[i].start_time = aux.start_time;
-		paux[i].status = aux.status;
-		strcpy(paux[i].proc,aux.proc); 
-
-	v_sem();
-
 
 	fclose(fp);
 	return 0;

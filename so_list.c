@@ -95,7 +95,7 @@ void getTotalTime(time_t start_time,char* totaltime){
 int main(){
 
 
-	int idshm, id2shm, *p2shm;
+	int idshm;
 	PROCESSO_T *pshm,*paux;
 	struct tm * timeinfo;
 	char start_time[50],totaltime[10];
@@ -114,22 +114,7 @@ int main(){
         printf("erro no attach\n");
         exit(1);
     }
-
-	/*da um shmget na mem compartilhada de bloqueio*/	
-	if ((id2shm = shmget(90108094, sizeof(int), IPC_CREAT|0x1ff)) < 0){
-	    printf("erro na criacao da memoria compartilhada\n");
-	    exit(1);
-	}
 	
-	/*da um attach na mem compartilhada de bloqueio para ver se pode escrever ou nao*/
-	p2shm = (int *) shmat(id2shm, (char *)0, 0);
-	if (p2shm == (int *)-1){
-        printf("erro no attach\n");
-        exit(1);
-    }
-
-	
-
 	/*da um semget em semaforo para cria-lo*/
 	if ((idsem = semget(90015266, 1, IPC_CREAT|0x1ff)) < 0){
 	     printf("erro na criacao do semaforo\n");

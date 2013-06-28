@@ -24,6 +24,12 @@ typedef struct processo{
 	char proc[50];
 }PROCESSO_T;
 
+typedef struct info{
+	int write_permission;
+	int last_nreq;
+
+}INFO_T;
+
 int idsem;
 struct sembuf operacao[1];
 
@@ -71,7 +77,8 @@ int main(int argc,char* argv[]){
 
 
 	int max_proc,processos_running;
-	int idshm, id2shm, *p2shm;
+	int idshm, id2shm;
+	INFO_T *p2shm;
 	PROCESSO_T *pshm,*paux;
 	struct tm * timeinfo;
 	char start_time[50];
@@ -100,14 +107,14 @@ int main(int argc,char* argv[]){
     }
 
 	/*da um shmget na mem compartilhada de bloqueio*/	
-	if ((id2shm = shmget(90108094, sizeof(int), IPC_CREAT|0x1ff)) < 0){
+	if ((id2shm = shmget(90108012, sizeof(INFO_T), IPC_CREAT|0x1ff)) < 0){
 	    printf("erro na criacao da memoria compartilhada\n");
 	    exit(1);
 	}
 	
 	/*da um attach na mem compartilhada de bloqueio para ver se pode escrever ou nao*/
-	p2shm = (int *) shmat(id2shm, (char *)0, 0);
-	if (p2shm == (int *)-1){
+	p2shm = (INFO_T *) shmat(id2shm, (char *)0, 0);
+	if (p2shm == (INFO_T *)-1){
         printf("erro no attach\n");
         exit(1);
     }

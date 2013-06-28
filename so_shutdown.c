@@ -19,6 +19,12 @@ struct mensagem{
      int pid_process;
 };
 
+typedef struct info{
+	int write_permission;
+	int last_nreq;
+
+}INFO_T;
+
 int p_sem(){
      operacao[0].sem_num = 0;
      operacao[0].sem_op = 1;
@@ -69,7 +75,8 @@ void destroy_IPCS(int id2shm){
 
 int main(){
 	
-	int id2shm, *p2shm;
+	int id2shm;
+	INFO_T *p2shm;
 	
 	/*Em 2 min os IPCS serao destruídos, processos encerrados*/
 	
@@ -77,14 +84,14 @@ int main(){
 	/*signal(SIGALRM, destroy_IPCS);*/
 	
 	/*Pegar o id para a area de mem compartilhada*/
-	if ((id2shm = shmget(90108012, sizeof(int), 0x1ff)) < 0){
+	if ((id2shm = shmget(90108012, sizeof(INFO_T), 0x1ff)) < 0){
 	    printf("erro na criacao da memoria compartilhada id2shm\n");
 	    exit(1);
 	}
 	
 	/*agora eu preciso bloquear o acesso.  Ou seja, preciso trocar p2shm para 1, ie NAO_PODE_ESCREVER*/
-	p2shm = (int *) shmat(id2shm, (char *)0, 0);
-	if (p2shm == (int *)-1){
+	p2shm = (INFO_T *) shmat(id2shm, (char *)0, 0);
+	if (p2shm == (INFO_T *)-1){
         printf("erro no attach\n");
         exit(1);
     }
@@ -97,7 +104,7 @@ int main(){
 
 	p_sem();
 		/*vou bloquear o acesso, setando -1 em p2shm, pois p2shm jamais terá esse valor*/
-		*p2shm = NAO_PODE_ESCREVER;
+		p2shm->write_permission = NAO_PODE_ESCREVER;
 	v_sem();	
 	
 	sleep(4);	
