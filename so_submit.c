@@ -144,10 +144,18 @@ int main (int argc, char* argv[]){
 
 
 	/*printProcesso(aux);*/	
+<<<<<<< HEAD
 	
 	p_sem();
 
 		if(p2shm != (int *)NAO_PODE_ESCREVER){
+=======
+	printf("p2shm: %d\n", *p2shm);
+	/*exit(0);*/
+	p_sem();
+
+		if(*p2shm != NAO_PODE_ESCREVER){
+>>>>>>> e9631fba41b8307e338bff8904358956ba451f35
 			i=0;
 		
 			paux = pshm;
@@ -163,7 +171,33 @@ int main (int argc, char* argv[]){
 		   	strcpy(paux[i].proc,aux.proc); 
 		}
 		
+
 	v_sem();
+
+	p_sem();
+		
+		i=0;
+
+		paux = pshm;
+		while(paux[i].nreq != 0 ){
+			i++;
+		}
+
+		paux[i].nreq = 39;
+		strcpy(paux[i].max_time,aux.max_time);
+		paux[i].num_proc = aux.num_proc;
+		paux[i].start_time = aux.start_time;
+		paux[i].status = aux.status;
+		strcpy(paux[i].proc,aux.proc); 
+
+	v_sem();
+
+
+	for (i = 0; i < NUM_TAB; ++i)
+	{
+		printf("%d\n",pshm[i].nreq);
+	}
+
 
 
 	fclose(fp);
