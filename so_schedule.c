@@ -82,17 +82,21 @@ int str2sec(char *std_time){
 void scheduler(){
 
 	int i, nreq_escolhido=0;
-	int max_time,start_time,current_time;
+	int max_time,start_time,current_time,menor_tempo=99999;
 	char time_str[9];
 	time_t time_now;
 	REQUISICAO_T req;
 
 
+
 	p_sem();
 
-		if(proc_livres < max_proc){
+
+		if(proc_livres > 0){
 			for(i=0;i<NUM_TAB;i++){
 				if((pshm[i].nreq != 0)&&(pshm[i].status == PENDING)){
+
+
 
 					max_time = str2sec(pshm[i].max_time);
 
@@ -104,9 +108,13 @@ void scheduler(){
 					current_time = str2sec(time_str);
 
 					req.tempo_restante = max_time - (current_time - start_time);
+					req.num_proc = pshm[i].num_proc;
+
+					if(req.tempo_restante < menor_tempo){
+						menor_tempo = req.tempo_restante;
+					}
 
 
-					printf("Start: %d\nCurrent: %d\nMax: %d\nDif: %d\n\n\n",start_time,current_time,max_time,req.tempo_restante);
 
 				}
 			}
@@ -122,7 +130,7 @@ void scheduler(){
 
 int main(int argc,char* argv[]){
 
-	int idshm,id2shm,idsem;
+	int idshm,id2shm;
 
 
 	signal(SIGALRM,scheduler);
