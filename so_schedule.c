@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <time.h>
 #include <errno.h>
+#include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -43,9 +44,15 @@ typedef struct prog{
 	char **params;
 }PROG_T;
 
+typedef struct req_pids{
+	int nreq;
+	int pid;
+}REQ_PIDS_T;
+
 int max_proc,proc_livres;
 int idsem;
 struct sembuf operacao[1];
+REQ_PIDS_T pids[500];
 PROCESSO_T *pshm;
 INFO_T *p2shm;
 
@@ -109,7 +116,7 @@ void getArgs(PROCESSO_T procs,PROG_T *prog){
 
 	int i,j,k;
 
-	(*prog).params = (char**)calloc((*prog).n_params,sizeof(char*));
+	(*prog).params = (char**)calloc((*prog).n_params+1,sizeof(char*));
 
 	k=0;
 	for(i=0;i<(*prog).n_params;i++){
@@ -125,6 +132,8 @@ void getArgs(PROCESSO_T procs,PROG_T *prog){
 		k++;
 		
 	}
+	(*prog).params[i] = (char*)0;
+
 
 }
 
@@ -181,7 +190,7 @@ void scheduler_SRT(){
 
 void scheduler_FIFO(){
 
-	int i,j,nreqs_num,nreqs_escolhidos[NUM_TAB],done;
+	int i,j,k,l,m,nreqs_num,nreqs_escolhidos[NUM_TAB],done,pid,status;
 	PROG_T prog;
 
 	
@@ -218,6 +227,49 @@ void scheduler_FIFO(){
 				pshm[i].status = RUNNING;
 				prog.n_params = countParams(pshm[i].proc);
 				getArgs(pshm[i],&prog);
+
+				pid = fork();
+				if(pid < 0){
+					printf("Erro no fork\n");
+					exit(-1);
+				}else if(!pid){
+
+					for(k=0;k<pshm[i].num_proc;k++){
+						pid = fork();
+
+						if(pid < 0){
+							printf("Erro no fork\n");
+							exit(-1);
+						}else if(!pid){
+							l=0;
+							while(pids[l].pid){
+								l++;
+							}
+							pids[l].nreq = pshm[i].nreq;
+							pids[l].pid = getpid();
+
+							execv(prog.params[0],prog.params);
+						}else{
+							if(k == pshm[k].num_proc - 1){
+								for(m=0;m<pshm[k].num_proc;m++){
+									wait(&status);
+								}
+
+
+								for(m=0;m<500;m++){
+									if(pids[m].nreq == pshm[i].nreq){
+										printf("Killed: %d\n",pids[m].pid);
+										kill(pids[m].pid,SIGKILL);
+										pids[m].nreq = 0;
+										pids[m].pid = 0;
+									}
+								}
+							}
+						}
+					}
+
+
+				}
 				j++;
 			}
 			if(j == nreqs_num){
@@ -287,7 +339,7 @@ int main(int argc,char* argv[]){
 	/*for(z=0;z<NUM_TAB;z++){
 		pshm[z].status = PENDING;
 
-	}*/
+	}exit(1);*/
 
 
 	while(1){
