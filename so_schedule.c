@@ -40,7 +40,7 @@ typedef struct info{
 typedef struct prog{
 	int n_params;
 	char nome[50];
-	char params[20][20];
+	char **params;
 }PROG_T;
 
 int max_proc,proc_livres;
@@ -114,10 +114,8 @@ void getArgs(PROCESSO_T procs,PROG_T *prog){
 	k=0;
 	for(i=0;i<(*prog).n_params;i++){
 		j=0;
-		
-		(*prog).params[i]  = (char*)calloc(50,sizeof(char));
-
-		while((procs.proc[k] != ' ') && (procs.proc[k] != '\n')){
+		(*prog).params[i] = (char*)calloc(50,sizeof(char));
+		while((procs.proc[k] != ' ') && (procs.proc[k] != '\n') && (procs.proc[k] != '\0')){
 			(*prog).params[i][j] = procs.proc[k];
 			j++;
 			k++;
@@ -129,6 +127,8 @@ void getArgs(PROCESSO_T procs,PROG_T *prog){
 	}
 
 }
+
+
 
 
 /*
@@ -200,7 +200,6 @@ void scheduler_FIFO(){
 
 
 		while((proc_livres > 0)&&(i<NUM_TAB)){
-			printf("OI\n");
 
 			if((pshm[i].nreq != 0)&&(pshm[i].num_proc <= proc_livres)&&(pshm[i].status == PENDING)){
 				proc_livres -= pshm[i].num_proc;
@@ -249,6 +248,7 @@ int main(int argc,char* argv[]){
 	}
 
 	max_proc = atoi(argv[1]);
+	max_proc = 6;
 	proc_livres = max_proc;
 
 
@@ -284,10 +284,10 @@ int main(int argc,char* argv[]){
 	     exit(1);
 	}
 
-	for(z=0;z<NUM_TAB;z++){
+	/*for(z=0;z<NUM_TAB;z++){
 		pshm[z].status = PENDING;
 
-	}
+	}*/
 
 
 	while(1){
