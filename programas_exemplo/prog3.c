@@ -19,7 +19,7 @@ int main()
        printf("erro no execl = %d\n", errno);
 	 }
 	else{
-		printf("pid = %d\n", pid);
+		//printf("pid = %d\n", pid);
 	}
    }
    else

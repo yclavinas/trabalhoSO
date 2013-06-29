@@ -95,7 +95,7 @@ void scheduler(){
 		if(proc_livres > 0){
 			for(i=0;i<NUM_TAB;i++){
 				if((pshm[i].nreq != 0)&&(pshm[i].status == PENDING)){
-				
+
 
 
 					max_time = str2sec(pshm[i].max_time);
@@ -114,7 +114,7 @@ void scheduler(){
 						menor_tempo = req.tempo_restante;
 					}
 
-					
+
 
 				}
 			}
@@ -183,5 +183,3 @@ int main(int argc,char* argv[]){
 	}
 
 	return 0;
-
-}

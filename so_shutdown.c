@@ -42,7 +42,7 @@ int v_sem(){
 }
 
 /*ataches e destroies para remover os ICPS*/
-void destroy_IPCS(int id2shm){
+int destroy_IPCS(int id2shm){
 	int idshm;
 	struct shmid_ds *buf;
 	struct mensagem mensagem_rec;
@@ -71,11 +71,14 @@ void destroy_IPCS(int id2shm){
 	
 	//tem que dar ctl na fila
 	
+	printf("Todos mecanismos IPC foram removidos\n");
+	//printf("Todos os processos terminaram\n");	
+	return 0;
 }
 
 int main(){
 	
-	int id2shm;
+	int id2shm, sucesso;
 	INFO_T *p2shm;
 	
 	/*Em 2 min os IPCS serao destruídos, processos encerrados*/
@@ -109,7 +112,8 @@ int main(){
 	
 	sleep(4);	
 	
-	destroy_IPCS(id2shm);
-	
+	sucesso = destroy_IPCS(id2shm);
+	if(sucesso == 0)
+		printf("SO_shutdown finalizado com sucesso!\n");
 	return(0);
 }

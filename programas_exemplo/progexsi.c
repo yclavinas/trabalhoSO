@@ -13,9 +13,9 @@ void funcao_sigusr2()
 
 main()
 {
-   alarm(2);
+   alarm(5);
    signal(SIGALRM, funcao_sigusr1);
-   signal(SIGUSR2, funcao_sigusr2);
+   //signal(SIGUSR2, funcao_sigusr2);
 
    sleep(10);
    printf("%s\n","Sei la\n" );
