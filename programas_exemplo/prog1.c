@@ -14,7 +14,7 @@ main()
      printf("sou o processo filho do prog1\n");
    else
    {
-	printf("%d \n", pid);
+	//printf("%d \n", pid);
      printf("sou o processo pai do prog1\n");
      sleep(10);
 	printf("saiu do sleep");
