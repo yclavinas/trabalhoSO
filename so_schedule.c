@@ -31,17 +31,28 @@ typedef struct info{
 
 }INFO_T;
 
-typedef struct requisicao{
+/*typedef struct requisicao{
 	int tempo_restante;
 	int num_proc;
-}REQUISICAO_T;
+}REQUISICAO_T;*/
 
+
+typedef struct prog{
+	int n_params;
+	char nome[50];
+	char params[20][20];
+}PROG_T;
 
 int max_proc,proc_livres;
 int idsem;
 struct sembuf operacao[1];
 PROCESSO_T *pshm;
 INFO_T *p2shm;
+
+
+int z;
+
+
 
 int p_sem()
 {
@@ -79,7 +90,49 @@ int str2sec(char *std_time){
 }
 
 
-void scheduler(){
+int countParams(char* input){
+	int i,n_params;
+
+
+	n_params = 1;/*O nome do programa sempre estara presente*/
+	for(i=0;i<strlen(input);i++){
+		if(input[i] == ' '){
+			n_params++;
+		}
+
+	}
+
+	return n_params;
+}
+
+void getArgs(PROCESSO_T procs,PROG_T *prog){
+
+	int i,j,k;
+
+	(*prog).params = (char**)calloc((*prog).n_params,sizeof(char*));
+
+	k=0;
+	for(i=0;i<(*prog).n_params;i++){
+		j=0;
+		
+		(*prog).params[i]  = (char*)calloc(50,sizeof(char));
+
+		while((procs.proc[k] != ' ') && (procs.proc[k] != '\n')){
+			(*prog).params[i][j] = procs.proc[k];
+			j++;
+			k++;
+		}
+		(*prog).params[i][j] = 0;
+		j++;
+		k++;
+		
+	}
+
+}
+
+
+/*
+void scheduler_SRT(){
 
 	int i, nreq_escolhido=0;
 	int max_time,start_time,current_time,menor_tempo=99999;
@@ -124,7 +177,62 @@ void scheduler(){
 	v_sem();
 }
 
+*/
 
+void scheduler_FIFO(){
+
+	int i,j,nreqs_num,nreqs_escolhidos[NUM_TAB],done;
+	PROG_T prog;
+
+	
+
+
+	for(i=0;i<NUM_TAB;i++){
+		nreqs_escolhidos[i] = 0;
+
+	}
+
+	p_sem();
+
+		i = 0;
+		nreqs_num = 0;
+
+
+
+		while((proc_livres > 0)&&(i<NUM_TAB)){
+			printf("OI\n");
+
+			if((pshm[i].nreq != 0)&&(pshm[i].num_proc <= proc_livres)&&(pshm[i].status == PENDING)){
+				proc_livres -= pshm[i].num_proc;
+				nreqs_escolhidos[nreqs_num] = pshm[i].nreq;
+				nreqs_num++;
+			}
+			i++;
+		}
+
+
+		done = 0;
+
+		j = 0;
+		for(i=0;((i<NUM_TAB)&&(j<nreqs_num)&&(!done));i++){
+			if(pshm[i].nreq == nreqs_escolhidos[j]){
+				pshm[i].status = RUNNING;
+				prog.n_params = countParams(pshm[i].proc);
+				getArgs(pshm[i],&prog);
+				j++;
+			}
+			if(j == nreqs_num){
+				done = 1;
+			}
+
+
+		}
+
+
+	v_sem();
+
+
+}
 
 
 
@@ -133,7 +241,7 @@ int main(int argc,char* argv[]){
 	int idshm,id2shm;
 
 
-	signal(SIGALRM,scheduler);
+	signal(SIGALRM,scheduler_FIFO);
 
 	if(argc == 1){
 		printf("Numero maximo de processos nao informado\n");
@@ -176,6 +284,11 @@ int main(int argc,char* argv[]){
 	     exit(1);
 	}
 
+	for(z=0;z<NUM_TAB;z++){
+		pshm[z].status = PENDING;
+
+	}
+
 
 	while(1){
 		alarm(1);
@@ -183,3 +296,4 @@ int main(int argc,char* argv[]){
 	}
 
 	return 0;
+}
