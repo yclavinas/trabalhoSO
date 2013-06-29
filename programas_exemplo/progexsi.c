@@ -17,8 +17,11 @@ main()
    signal(SIGALRM, funcao_sigusr1);
    signal(SIGUSR2, funcao_sigusr2);
 
+   sleep(10);
+   printf("%s\n","Sei la\n" );
+
    //kill(getpid(), SIGUSR1);
    //kill(getpid(), SIGUSR2);
 
-sleep(10);
+//sleep(10);
 }
