@@ -24,6 +24,7 @@ typedef struct processo{
 	time_t start_time;
 	int status;
 	char proc[50];
+	int pid;/*pid do dispatcher*/
 }PROCESSO_T;
 
 typedef struct info{
@@ -145,7 +146,7 @@ int main (int argc, char* argv[]){
 
 
 	getValue(&fp,aux.proc);/*pega o nome do programa*/
-	getValue(&fp,aux.max_time);/*Pega o tempo mâ€¡ximo de execucao*/
+	getValue(&fp,aux.max_time);/*Pega o tempo m‡ximo de execucao*/
 	getValue(&fp,temp);
 	aux.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
 	aux.start_time = time(NULL);/*Pega o tempo de inicio da execucao*/
@@ -170,6 +171,7 @@ int main (int argc, char* argv[]){
 			paux[i].start_time = aux.start_time;
 			paux[i].status = aux.status;
 		   	strcpy(paux[i].proc,aux.proc); 
+		   	paux[i].pid = 0;
 		}else{
 			printf("Gerenciador em processo de desligamneto\n");
 		}

@@ -26,6 +26,7 @@ typedef struct processo{
 	time_t start_time;
 	int status;
 	char proc[50];
+	int pid;/*pid do dispatcher*/ 
 }PROCESSO_T;
 
 typedef struct info{
@@ -157,12 +158,40 @@ void dbg(int val,char* str){
 	exit(1);
 }
 
+int checkTime(int i){
+
+	time_t s_time,c_time;
+	char start_time[9],current_time[9];
+	int s_time_secs,c_time_secs,running_time,max_time,remaining_time;
+
+	c_time = time(NULL);
+	s_time = pshm[i].start_time;
+
+	strftime(start_time,9,"%T",localtime(&s_time));
+	strftime(current_time,9,"%T",localtime(&c_time));
+
+	s_time_secs = str2sec(start_time);
+	c_time_secs = str2sec(current_time);
+
+	running_time = c_time_secs - s_time_secs;
+	max_time = str2sec(pshm[i].max_time);
+
+	remaining_time = max_time - running_time;
+	
+	if(remaining_time > 0){
+		return 0;/*Dentro do periodo estipulado*/
+	}else{
+		return 1;/*Estourou o tempo*/
+	}
+
+}
 
 void scheduler_FIFO(){
 
-	int i,j,k,pid,status;
+	int i,j,k,timeout,pid,status;
 	int * processes_running;
 	PROG_T prog;
+	char cmd[50];
 
 
 	i = 0;
@@ -176,6 +205,22 @@ void scheduler_FIFO(){
 					proc_livres += pshm[i].num_proc;
 					/*printf("Liberando depois: %d\n",proc_livres);*/
 				v_sem2();
+			}else if((pshm[i].nreq > 0)&&(pshm[i].status == RUNNING)){
+				timeout = checkTime(i);
+				if(timeout){
+					
+					sprintf(cmd,"pkill -P %d",pshm[i].pid);
+					printf("%s\n",cmd);
+					system(cmd);
+					kill(pshm[i].pid,SIGKILL);
+
+					pshm[i].nreq = 0;
+					pshm[i].status == FINISHED;
+					p_sem2();
+						proc_livres += pshm[i].num_proc;
+					v_sem2();
+
+				}
 			}
 		}
 	v_sem();
@@ -232,6 +277,8 @@ void scheduler_FIFO(){
 						}
 					}
 				}
+			}else{
+				pshm[i].pid = pid;
 			}
 		}
 		i++;
@@ -306,5 +353,4 @@ int main(int argc,char* argv[]){
 
 	return 0;
 }
-
 

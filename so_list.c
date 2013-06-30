@@ -22,6 +22,7 @@ typedef struct processo{
 	time_t start_time;
 	int status;
 	char proc[50];
+	int pid;/*pid do processo dispatcher*/
 }PROCESSO_T;
 
 int idsem;
@@ -126,13 +127,13 @@ int main(){
 	}
 
 	totaltime[0] = 0;
-	printf("%-4s\t%9s\t%-6s\t%-9s\t%-8s\t%-s\n","Nreq","Max_time","N_proc","Time","Status","Program");
+	printf("%-4s\t%9s\t%-6s\t%-9s\t%-8s\t%-s\t%-s\n","Nreq","Max_time","N_proc","Time","Status","Program","PID");
 	p_sem();
 		for(i=0;i<NUM_TAB;i++){
 			if(pshm[i].nreq != 0){
 				getTotalTime(pshm[i].start_time,totaltime);
-				printf("%-4d\t%9s\t%-6d\t%-9s\t%-8s\t%-s\n",pshm[i].nreq,pshm[i].max_time,pshm[i].num_proc,
-				totaltime,getStatusString(pshm[i].status),pshm[i].proc);
+				printf("%-4d\t%9s\t%-6d\t%-9s\t%-8s\t%-s\t%d\n",pshm[i].nreq,pshm[i].max_time,pshm[i].num_proc,
+				totaltime,getStatusString(pshm[i].status),pshm[i].proc,pshm[i].pid);
 			}
 		}
 

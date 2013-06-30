@@ -22,7 +22,6 @@ struct mensagem{
 typedef struct info{
 	int write_permission;
 	int last_nreq;
-
 }INFO_T;
 
 int p_sem(){
