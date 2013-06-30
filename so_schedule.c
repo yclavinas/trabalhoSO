@@ -13,8 +13,10 @@
 
 #define RUNNING 1
 #define PENDING 0
+#define FINISHED -1
 #define NUM_TAB 50
 #define NAO_PODE_ESCREVER -1
+#define MAX_PROCS 500
 
 
 typedef struct processo{
@@ -32,11 +34,6 @@ typedef struct info{
 
 }INFO_T;
 
-/*typedef struct requisicao{
-	int tempo_restante;
-	int num_proc;
-}REQUISICAO_T;*/
-
 
 typedef struct prog{
 	int n_params;
@@ -50,15 +47,11 @@ typedef struct req_pids{
 }REQ_PIDS_T;
 
 int max_proc,proc_livres;
-int idsem, id2sem;
-struct sembuf operacao[1], operacao2[1];
-REQ_PIDS_T pids[500];
+int idsem,id2sem;
+struct sembuf operacao[1],operacao2[1];
+REQ_PIDS_T pids[MAX_PROCS];
 PROCESSO_T *pshm;
 INFO_T *p2shm;
-
-
-int z;
-
 
 
 int p_sem()
@@ -147,125 +140,107 @@ void getArgs(PROCESSO_T procs,PROG_T *prog){
 		(*prog).params[i][j] = 0;
 		j++;
 		k++;
-
+		
 	}
 	(*prog).params[i] = (char*)0;
+	strcpy(prog->nome,prog->params[0]);
 
 
 }
 
+void dbg(int val,char* str){
 
+	if(str == NULL){
+		printf("%d\n",val);
+	}else{
+		printf("%s\n",str);
+	}
+	exit(1);
+}
 
 
 void scheduler_FIFO(){
 
-	int i,j,k,l,m,nreqs_num,nreqs_escolhidos[NUM_TAB],done,pid,status;
+	int i,j,k,pid,status;
+	int * processes_running;
 	PROG_T prog;
 
 
-
-
-	for(i=0;i<NUM_TAB;i++){
-		nreqs_escolhidos[i] = 0;
-
-	}
-
 	i = 0;
-	nreqs_num = 0;
 
 	p_sem();
-		while((proc_livres > 0)&&(i<NUM_TAB)){
-			if((pshm[i].nreq != 0)&&(pshm[i].num_proc <= proc_livres)&&(pshm[i].status == PENDING)){
-
-				proc_livres -= pshm[i].num_proc;
-				nreqs_escolhidos[nreqs_num] = pshm[i].nreq;
-				nreqs_num++;
+		for(i=0;i<NUM_TAB;i++){
+			if((pshm[i].nreq < 0)&&(pshm[i].status == FINISHED)){
+				pshm[i].nreq = 0;
+				p_sem2();
+					/*printf("Liberando antes: %d\n",proc_livres);*/
+					proc_livres += pshm[i].num_proc;
+					/*printf("Liberando depois: %d\n",proc_livres);*/
+				v_sem2();
 			}
-			i++;
 		}
+	v_sem();
 
+	i = 0;
 
-		done = 0;
+	p_sem();
 
-		j = 0;
-		for(i=0;((i<NUM_TAB)&&(j<nreqs_num)&&(!done));i++){
-			if(pshm[i].nreq == nreqs_escolhidos[j]){
-				pshm[i].status = RUNNING;
-				prog.n_params = countParams(pshm[i].proc);
-				getArgs(pshm[i],&prog);
+	while((proc_livres > 0)&&(i < NUM_TAB)){
+		
+		if((pshm[i].nreq > 0)&&(pshm[i].status == PENDING)&&(pshm[i].num_proc <= proc_livres)){
+			
+			p_sem2();
+			/*printf("Alocando antes: %d\n",proc_livres);*/
+			proc_livres -= pshm[i].num_proc;
+			/*printf("Alocando depois: %d\n",proc_livres);*/
+			v_sem2();
 
-				pid = fork();
-				if(pid < 0){
-					printf("Erro no fork\n");
-					exit(-1);
-				}else if(!pid){
+			
+			prog.n_params = countParams(pshm[i].proc);
+			getArgs(pshm[i],&prog);
+			pshm[i].status = RUNNING;
 
-					for(k=0;k<pshm[i].num_proc;k++){
-						pid = fork();
+			pid = fork();
+			if(pid<0){
+				printf("Erro no fork dispatcher\n");
+				exit(-1);
+			}else if(!pid){
+				/*Processo dispatcher*/
+				processes_running = (int*)calloc(pshm[i].num_proc,sizeof(int));
 
-						if(pid < 0){
-							printf("Erro no fork\n");
-							exit(-1);
-						}else if(!pid){
-							l=0;
+				for(j=0;j<pshm[i].num_proc;j++){
 
-							/*Nesse trecho pode estar ocorrendo condicao de corrida*/
-							while(pids[l].pid == 0){
-								l++;
-							}
-							pids[l].nreq = pshm[i].nreq;
-							pids[l].pid = getpid();
-							/*Nesse trecho pode estar ocorrendo condicao de corrida*/
+					processes_running[j] = fork();
+					if(processes_running[j] < 0){
+						printf("Erro no fork worker\n");
+						exit(-1);
+					}else if(processes_running[j] == 0){
+						/*Processos worker*/
 
-							execv(prog.params[0],prog.params);
-						}else{
-							if(k == pshm[k].num_proc - 1){
-								for(m=0;m<pshm[k].num_proc;m++){
-									wait(&status);
-								}
+						execv(prog.nome,prog.params);
+					}else{
+						/*Processo dispatcher*/
 
+						for(k=0;k<pshm[i].num_proc;k++){
+							wait(&status);
+							if((k == pshm[i].num_proc-1)&&(j==pshm[i].num_proc-1)){
+								pshm[i].status = FINISHED;
+								pshm[i].nreq = -1;
 
+								exit(0);
 
-								for(m=0;m<500;m++){
-									if(pids[m].nreq == pshm[i].nreq){
-										printf("\nPid: %d - Proc = %d\n",pids[m].nreq,pshm[i].nreq);
-										kill(pids[m].pid,SIGKILL);
-										pids[m].nreq = 0;
-										pids[m].pid = 0;
-									}
-								}
-
-								/*Condicao de corrida*/
-								p_sem2();
-								printf("proc_livres: %d", proc_livres);
-									proc_livres += pshm[i].num_proc;
-									/*Condicao de corrida*/
-									
-								
-								printf("proc_livres: %d", proc_livres);
-								v_sem2();
-								pshm[i].nreq = 0;
-								exit(1);
 							}
 						}
 					}
-
-
 				}
-				j++;
 			}
-			if(j == nreqs_num){
-				done = 1;
-			}
-
-
 		}
-
-
+		i++;
+	}
 	v_sem();
 
-
 }
+
 
 
 
@@ -316,17 +291,13 @@ int main(int argc,char* argv[]){
 	     printf("erro na criacao do semaforo\n");
 	     exit(1);
 	}
-	
+
+
 	/*da um semget no 2o semaforo para cria-lo*/
 	if ((id2sem = semget(90015212, 1, IPC_CREAT|0x1ff)) < 0){
 	     printf("erro na criacao do semaforo\n");
 	     exit(1);
 	}
-
-	/*for(z=0;z<NUM_TAB;z++){
-		pshm[z].status = PENDING;
-
-	}exit(1);*/
 
 
 	while(1){
@@ -335,4 +306,5 @@ int main(int argc,char* argv[]){
 	}
 
 	return 0;
-}	
+}
+

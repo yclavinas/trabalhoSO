@@ -11,7 +11,7 @@
 
 #define NAO_PODE_ESCREVER -1
 
-int idsem;
+int idsem,id2sem;
 struct sembuf operacao[1];
 
 struct mensagem{
@@ -63,6 +63,7 @@ int destroy_IPCS(int id2shm){
 	shmctl(idshm,IPC_RMID, buf);
 	shmctl(id2shm,IPC_RMID, buf);
 	semctl(idsem,1,IPC_RMID, buf);
+	semctl(id2sem,1,IPC_RMID, buf);
 	
 	/*Loop para acabar com os processos que estão em execucao, dando kill com o pid que pegarei da fila de msg*/
 	//while(msgrcv(idfila, &mensagem_rec, sizeof(mensagem_rec)-sizeof(long), 0, IPC_NOWAIT) != NULL){
@@ -101,6 +102,12 @@ int main(){
 
 	/*da um semget em semaforo para ter acesso */
 	if ((idsem = semget(90015266, 1, 0x1ff)) < 0){
+	     printf("erro na criacao do semaforo\n");
+	     exit(1);
+	}
+
+	/*da um semget no 2o semaforo para cria-lo*/
+	if ((id2sem = semget(90015212, 1, IPC_CREAT|0x1ff)) < 0){
 	     printf("erro na criacao do semaforo\n");
 	     exit(1);
 	}
