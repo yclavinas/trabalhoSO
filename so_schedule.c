@@ -140,54 +140,6 @@ void getArgs(PROCESSO_T procs,PROG_T *prog){
 
 
 
-/*
-void scheduler_SRT(){
-
-	int i, nreq_escolhido=0;
-	int max_time,start_time,current_time,menor_tempo=99999;
-	char time_str[9];
-	time_t time_now;
-	REQUISICAO_T req;
-
-
-
-	p_sem();
-
-
-		if(proc_livres > 0){
-			for(i=0;i<NUM_TAB;i++){
-				if((pshm[i].nreq != 0)&&(pshm[i].status == PENDING)){
-
-
-
-					max_time = str2sec(pshm[i].max_time);
-
-					strftime(time_str,9,"%T",localtime(&pshm[i].start_time));
-					start_time = str2sec(time_str);
-
-					time_now = time(NULL);
-					strftime(time_str,9,"%T",localtime(&time_now));
-					current_time = str2sec(time_str);
-
-					req.tempo_restante = max_time - (current_time - start_time);
-					req.num_proc = pshm[i].num_proc;
-
-					if(req.tempo_restante < menor_tempo){
-						menor_tempo = req.tempo_restante;
-					}
-
-
-
-				}
-			}
-
-		}	
-
-	v_sem();
-}
-
-*/
-
 void scheduler_FIFO(){
 
 	int i,j,k,l,m,nreqs_num,nreqs_escolhidos[NUM_TAB],done,pid,status;
@@ -201,16 +153,13 @@ void scheduler_FIFO(){
 
 	}
 
+	i = 0;
+	nreqs_num = 0;
+
 	p_sem();
-
-		i = 0;
-		nreqs_num = 0;
-
-
-
 		while((proc_livres > 0)&&(i<NUM_TAB)){
-
 			if((pshm[i].nreq != 0)&&(pshm[i].num_proc <= proc_livres)&&(pshm[i].status == PENDING)){
+
 				proc_livres -= pshm[i].num_proc;
 				nreqs_escolhidos[nreqs_num] = pshm[i].nreq;
 				nreqs_num++;
@@ -242,11 +191,14 @@ void scheduler_FIFO(){
 							exit(-1);
 						}else if(!pid){
 							l=0;
-							while(pids[l].pid){
+
+							/*Nesse trecho pode estar ocorrendo condicao de corrida*/
+							while(pids[l].pid == 0){
 								l++;
 							}
 							pids[l].nreq = pshm[i].nreq;
 							pids[l].pid = getpid();
+							/*Nesse trecho pode estar ocorrendo condicao de corrida*/
 
 							execv(prog.params[0],prog.params);
 						}else{
@@ -256,14 +208,22 @@ void scheduler_FIFO(){
 								}
 
 
+
 								for(m=0;m<500;m++){
 									if(pids[m].nreq == pshm[i].nreq){
-										printf("Killed: %d\n",pids[m].pid);
+										printf("\nPid: %d - Proc = %d\n",pids[m].nreq,pshm[i].nreq);
 										kill(pids[m].pid,SIGKILL);
 										pids[m].nreq = 0;
 										pids[m].pid = 0;
 									}
 								}
+								
+								/*Condicao de corrida*/
+								proc_livres += pshm[i].num_proc;
+								/*Condicao de corrida*/
+								pshm[i].nreq = 0;
+
+								exit(1);
 							}
 						}
 					}
@@ -300,7 +260,6 @@ int main(int argc,char* argv[]){
 	}
 
 	max_proc = atoi(argv[1]);
-	max_proc = 6;
 	proc_livres = max_proc;
 
 
