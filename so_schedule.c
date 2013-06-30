@@ -50,8 +50,8 @@ typedef struct req_pids{
 }REQ_PIDS_T;
 
 int max_proc,proc_livres;
-int idsem;
-struct sembuf operacao[1];
+int idsem, id2sem;
+struct sembuf operacao[1], operacao2[1];
 REQ_PIDS_T pids[500];
 PROCESSO_T *pshm;
 INFO_T *p2shm;
@@ -75,6 +75,23 @@ int v_sem()
      operacao[0].sem_op = -1;
      operacao[0].sem_flg = 0;
      if ( semop(idsem, operacao, 1) < 0)
+       printf("erro no p=%d\n", errno);
+}
+
+int p_sem2()
+{
+     operacao2[0].sem_num = 0;
+     operacao2[0].sem_op = 1;
+     operacao2[0].sem_flg = 0;
+     if ( semop(id2sem, operacao2, 1) < 0)
+       printf("erro no p=%d\n", errno);
+}
+int v_sem2()
+{
+     operacao2[0].sem_num = 0;
+     operacao2[0].sem_op = -1;
+     operacao2[0].sem_flg = 0;
+     if ( semop(id2sem, operacao2, 1) < 0)
        printf("erro no p=%d\n", errno);
 }
 
@@ -219,10 +236,15 @@ void scheduler_FIFO(){
 								}
 
 								/*Condicao de corrida*/
-								proc_livres += pshm[i].num_proc;
-								/*Condicao de corrida*/
+								p_sem2();
+								printf("proc_livres: %d", proc_livres);
+									proc_livres += pshm[i].num_proc;
+									/*Condicao de corrida*/
+									
+								
+								printf("proc_livres: %d", proc_livres);
+								v_sem2();
 								pshm[i].nreq = 0;
-
 								exit(1);
 							}
 						}
@@ -294,6 +316,12 @@ int main(int argc,char* argv[]){
 	     printf("erro na criacao do semaforo\n");
 	     exit(1);
 	}
+	
+	/*da um semget no 2o semaforo para cria-lo*/
+	if ((id2sem = semget(90015212, 1, IPC_CREAT|0x1ff)) < 0){
+	     printf("erro na criacao do semaforo\n");
+	     exit(1);
+	}
 
 	/*for(z=0;z<NUM_TAB;z++){
 		pshm[z].status = PENDING;
@@ -307,4 +335,4 @@ int main(int argc,char* argv[]){
 	}
 
 	return 0;
-}
+}	
