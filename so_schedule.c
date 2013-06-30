@@ -31,7 +31,6 @@ typedef struct processo{
 typedef struct info{
 	int write_permission;
 	int last_nreq;
-
 }INFO_T;
 
 
@@ -300,11 +299,12 @@ int main(int argc,char* argv[]){
 	}
 
 
-	while(1){
+	while(p2shm->write_permission != NAO_PODE_ESCREVER){
 		alarm(1);
 		sleep(2);
 	}
 
 	return 0;
 }
+
 

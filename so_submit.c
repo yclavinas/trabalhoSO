@@ -29,7 +29,7 @@ typedef struct processo{
 typedef struct info{
 	int write_permission;
 	int last_nreq;
-
+	int shutdown;
 }INFO_T;
 
 int p_sem()
@@ -145,7 +145,7 @@ int main (int argc, char* argv[]){
 
 
 	getValue(&fp,aux.proc);/*pega o nome do programa*/
-	getValue(&fp,aux.max_time);/*Pega o tempo m‡ximo de execucao*/
+	getValue(&fp,aux.max_time);/*Pega o tempo mâ€¡ximo de execucao*/
 	getValue(&fp,temp);
 	aux.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
 	aux.start_time = time(NULL);/*Pega o tempo de inicio da execucao*/
@@ -170,6 +170,8 @@ int main (int argc, char* argv[]){
 			paux[i].start_time = aux.start_time;
 			paux[i].status = aux.status;
 		   	strcpy(paux[i].proc,aux.proc); 
+		}else{
+			printf("Gerenciador em processo de desligamneto\n");
 		}
 
 
