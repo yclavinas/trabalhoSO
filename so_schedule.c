@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <time.h>
 #include <errno.h>
+#include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -40,12 +41,18 @@ typedef struct info{
 typedef struct prog{
 	int n_params;
 	char nome[50];
-	char params[20][20];
+	char **params;
 }PROG_T;
+
+typedef struct req_pids{
+	int nreq;
+	int pid;
+}REQ_PIDS_T;
 
 int max_proc,proc_livres;
 int idsem;
 struct sembuf operacao[1];
+REQ_PIDS_T pids[500];
 PROCESSO_T *pshm;
 INFO_T *p2shm;
 
@@ -109,15 +116,13 @@ void getArgs(PROCESSO_T procs,PROG_T *prog){
 
 	int i,j,k;
 
-	(*prog).params = (char**)calloc((*prog).n_params,sizeof(char*));
+	(*prog).params = (char**)calloc((*prog).n_params+1,sizeof(char*));
 
 	k=0;
 	for(i=0;i<(*prog).n_params;i++){
 		j=0;
-		
-		(*prog).params[i]  = (char*)calloc(50,sizeof(char));
-
-		while((procs.proc[k] != ' ') && (procs.proc[k] != '\n')){
+		(*prog).params[i] = (char*)calloc(50,sizeof(char));
+		while((procs.proc[k] != ' ') && (procs.proc[k] != '\n') && (procs.proc[k] != '\0')){
 			(*prog).params[i][j] = procs.proc[k];
 			j++;
 			k++;
@@ -125,66 +130,22 @@ void getArgs(PROCESSO_T procs,PROG_T *prog){
 		(*prog).params[i][j] = 0;
 		j++;
 		k++;
-		
+
 	}
+	(*prog).params[i] = (char*)0;
+
 
 }
 
 
-/*
-void scheduler_SRT(){
 
-	int i, nreq_escolhido=0;
-	int max_time,start_time,current_time,menor_tempo=99999;
-	char time_str[9];
-	time_t time_now;
-	REQUISICAO_T req;
-
-
-
-	p_sem();
-
-
-		if(proc_livres > 0){
-			for(i=0;i<NUM_TAB;i++){
-				if((pshm[i].nreq != 0)&&(pshm[i].status == PENDING)){
-
-
-
-					max_time = str2sec(pshm[i].max_time);
-
-					strftime(time_str,9,"%T",localtime(&pshm[i].start_time));
-					start_time = str2sec(time_str);
-
-					time_now = time(NULL);
-					strftime(time_str,9,"%T",localtime(&time_now));
-					current_time = str2sec(time_str);
-
-					req.tempo_restante = max_time - (current_time - start_time);
-					req.num_proc = pshm[i].num_proc;
-
-					if(req.tempo_restante < menor_tempo){
-						menor_tempo = req.tempo_restante;
-					}
-
-
-
-				}
-			}
-
-		}	
-
-	v_sem();
-}
-
-*/
 
 void scheduler_FIFO(){
 
-	int i,j,nreqs_num,nreqs_escolhidos[NUM_TAB],done;
+	int i,j,k,l,m,nreqs_num,nreqs_escolhidos[NUM_TAB],done,pid,status;
 	PROG_T prog;
 
-	
+
 
 
 	for(i=0;i<NUM_TAB;i++){
@@ -192,17 +153,13 @@ void scheduler_FIFO(){
 
 	}
 
+	i = 0;
+	nreqs_num = 0;
+
 	p_sem();
-
-		i = 0;
-		nreqs_num = 0;
-
-
-
 		while((proc_livres > 0)&&(i<NUM_TAB)){
-			printf("OI\n");
-
 			if((pshm[i].nreq != 0)&&(pshm[i].num_proc <= proc_livres)&&(pshm[i].status == PENDING)){
+
 				proc_livres -= pshm[i].num_proc;
 				nreqs_escolhidos[nreqs_num] = pshm[i].nreq;
 				nreqs_num++;
@@ -219,6 +176,60 @@ void scheduler_FIFO(){
 				pshm[i].status = RUNNING;
 				prog.n_params = countParams(pshm[i].proc);
 				getArgs(pshm[i],&prog);
+
+				pid = fork();
+				if(pid < 0){
+					printf("Erro no fork\n");
+					exit(-1);
+				}else if(!pid){
+
+					for(k=0;k<pshm[i].num_proc;k++){
+						pid = fork();
+
+						if(pid < 0){
+							printf("Erro no fork\n");
+							exit(-1);
+						}else if(!pid){
+							l=0;
+
+							/*Nesse trecho pode estar ocorrendo condicao de corrida*/
+							while(pids[l].pid == 0){
+								l++;
+							}
+							pids[l].nreq = pshm[i].nreq;
+							pids[l].pid = getpid();
+							/*Nesse trecho pode estar ocorrendo condicao de corrida*/
+
+							execv(prog.params[0],prog.params);
+						}else{
+							if(k == pshm[k].num_proc - 1){
+								for(m=0;m<pshm[k].num_proc;m++){
+									wait(&status);
+								}
+
+
+
+								for(m=0;m<500;m++){
+									if(pids[m].nreq == pshm[i].nreq){
+										printf("\nPid: %d - Proc = %d\n",pids[m].nreq,pshm[i].nreq);
+										kill(pids[m].pid,SIGKILL);
+										pids[m].nreq = 0;
+										pids[m].pid = 0;
+									}
+								}
+
+								/*Condicao de corrida*/
+								proc_livres += pshm[i].num_proc;
+								/*Condicao de corrida*/
+								pshm[i].nreq = 0;
+
+								exit(1);
+							}
+						}
+					}
+
+
+				}
 				j++;
 			}
 			if(j == nreqs_num){
@@ -284,10 +295,10 @@ int main(int argc,char* argv[]){
 	     exit(1);
 	}
 
-	for(z=0;z<NUM_TAB;z++){
+	/*for(z=0;z<NUM_TAB;z++){
 		pshm[z].status = PENDING;
 
-	}
+	}exit(1);*/
 
 
 	while(1){
