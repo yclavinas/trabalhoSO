@@ -1,42 +1,3 @@
-/**
-
-Cain‹ Felipe Bento Razzolini - 09/0108094
-Yuri Cossich Lavinas - 09/0015266
-
-Compilador: gcc 4.6.3 
-	x86_64-Linux-gnu
- 
-SO: Ubuntu 12.04 LTS 64 bits
-
-Algoritmo de escalonamento: FIFO
-	O escalonador ir‡ buscar um arquivo na tabela de arquivos com o tempo de entrada mais antigo, caracterizando o FIFO. S— ser‡
-executado um arquivo por vez, mesmo que o max_proc n‹o esteja todo ocupado.
-
-Mecanismos PIC: 
-	Foram usados 2 tipos de mecanismos IPC, sem‡foros e mem—ria compartilhada. E para cada tipo, foram usadas duas inst‰ncias.
-	
-		1.As mem—rias compartilhadas foi utilizada para termos acesso a tabela e vari‡veis de controle de acesso e escrita.
-	Em idshm foi criada para conter a tabela de processos, enquanto id2shm foi criada para, qudndo so_shutdown for executado, podermos
-	evitar que novos processos possam ser ou executados ou entrarem na tabela de processos.
-
-		2.J‡ os sem‡foros foram utilizados para garantir que tenhamos somente um processo com acesso a dados/vari‡veis vitais.	
-	idsem foi criado para garantir acesso œnico as mem—rias compartilhadas. id2sem, para a quantidade de processos que podem ser alocados.
-
-As estruturas de dados:
-	INFO_T, PROCESSO_T, INFO_T, PROG_T
-
-
-	PROCESSO_T: Estrutura da tabela de processos
-	INFO_T: Estrutura contento o contador de requisicoes e flag de termino
-	PROG_T: Informaçoes do programa
-
-
-
-
-
-
-*/
-
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -63,15 +24,15 @@ typedef struct processo{
 	time_t start_time;
 	int status;
 	char proc[50];
-	int pid;/*pid do dispatcher*/
 }PROCESSO_T;
 
 typedef struct info{
 	int write_permission;
 	int last_nreq;
+	int shutdown;
 }INFO_T;
 
-void p_sem()
+int p_sem()
 {
      operacao[0].sem_num = 0;
      operacao[0].sem_op = 1;
@@ -79,7 +40,7 @@ void p_sem()
      if ( semop(idsem, operacao, 1) < 0)
        printf("erro no p=%d\n", errno);
 }
-void v_sem()
+int v_sem()
 {
      operacao[0].sem_num = 0;
      operacao[0].sem_op = -1;
@@ -131,7 +92,7 @@ int main (int argc, char* argv[]){
 
 	FILE* fp;
 	char arqName[50], temp[50];
-	PROCESSO_T  aux;
+	PROCESSO_T tab_processo[NUM_TAB], aux;
 	int idshm, id2shm;
 	INFO_T *p2shm;
 	PROCESSO_T *pshm,*paux;
@@ -184,39 +145,4 @@ int main (int argc, char* argv[]){
 
 
 	getValue(&fp,aux.proc);/*pega o nome do programa*/
-	getValue(&fp,aux.max_time);/*Pega o tempo m‡ximo de execucao*/
-	getValue(&fp,temp);
-	aux.num_proc = atoi(temp);/*Pega o numero de processos e transforma em inteiro*/
-	aux.start_time = time(NULL);/*Pega o tempo de inicio da execucao*/
-	aux.status = PENDING;
-
-
-	/*printProcesso(aux);*/	
-
-	p_sem();
-
-		if(p2shm->write_permission != NAO_PODE_ESCREVER){
-			i=0;
-
-			paux = pshm;
-			while(paux[i].nreq != 0 ){
-				i++;
-			}
-
-			paux[i].nreq = ++p2shm->last_nreq;
-			strcpy(paux[i].max_time,aux.max_time);
-			paux[i].num_proc = aux.num_proc;
-			paux[i].start_time = aux.start_time;
-			paux[i].status = aux.status;
-		   	strcpy(paux[i].proc,aux.proc); 
-		   	paux[i].pid = 0;
-		}else{
-			printf("Gerenciador em processo de desligamneto\n");
-		}
-
-
-	v_sem();
-
-	fclose(fp);
-	return 0;
-}
+	getValue(&fp,aux.max_time);/*Pega o tempo m

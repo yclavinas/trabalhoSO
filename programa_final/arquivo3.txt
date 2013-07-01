@@ -1,0 +1,3 @@
+Program = teste
+Max_Time = 00:10:00
+N_proc = 1

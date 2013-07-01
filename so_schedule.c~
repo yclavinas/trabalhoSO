@@ -1,42 +1,3 @@
-/**
-
-Cain‹ Felipe Bento Razzolini - 09/0108094
-Yuri Cossich Lavinas - 09/0015266
-
-Compilador: gcc 4.6.3 
-	x86_64-Linux-gnu
- 
-SO: Ubuntu 12.04 LTS 64 bits
-
-Algoritmo de escalonamento: FIFO
-	O escalonador ir‡ buscar um arquivo na tabela de arquivos com o tempo de entrada mais antigo, caracterizando o FIFO. S— ser‡
-executado um arquivo por vez, mesmo que o max_proc n‹o esteja todo ocupado.
-
-Mecanismos PIC: 
-	Foram usados 2 tipos de mecanismos IPC, sem‡foros e mem—ria compartilhada. E para cada tipo, foram usadas duas inst‰ncias.
-	
-		1.As mem—rias compartilhadas foi utilizada para termos acesso a tabela e vari‡veis de controle de acesso e escrita.
-	Em idshm foi criada para conter a tabela de processos, enquanto id2shm foi criada para, qudndo so_shutdown for executado, podermos
-	evitar que novos processos possam ser ou executados ou entrarem na tabela de processos.
-
-		2.J‡ os sem‡foros foram utilizados para garantir que tenhamos somente um processo com acesso a dados/vari‡veis vitais.	
-	idsem foi criado para garantir acesso œnico as mem—rias compartilhadas. id2sem, para a quantidade de processos que podem ser alocados.
-
-As estruturas de dados:
-	INFO_T, PROCESSO_T, INFO_T, PROG_T
-
-
-	PROCESSO_T: Estrutura da tabela de processos
-	INFO_T: Estrutura contento o contador de requisicoes e flag de termino
-	PROG_T: Informaçoes do programa
-
-
-
-
-
-
-*/
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -65,12 +26,12 @@ typedef struct processo{
 	time_t start_time;
 	int status;
 	char proc[50];
-	int pid;/*pid do dispatcher*/ 
 }PROCESSO_T;
 
 typedef struct info{
 	int write_permission;
 	int last_nreq;
+
 }INFO_T;
 
 
@@ -80,15 +41,20 @@ typedef struct prog{
 	char **params;
 }PROG_T;
 
+typedef struct req_pids{
+	int nreq;
+	int pid;
+}REQ_PIDS_T;
 
 int max_proc,proc_livres;
 int idsem,id2sem;
 struct sembuf operacao[1],operacao2[1];
+REQ_PIDS_T pids[MAX_PROCS];
 PROCESSO_T *pshm;
 INFO_T *p2shm;
 
 
-void p_sem()
+int p_sem()
 {
      operacao[0].sem_num = 0;
      operacao[0].sem_op = 1;
@@ -96,8 +62,7 @@ void p_sem()
      if ( semop(idsem, operacao, 1) < 0)
        printf("erro no p=%d\n", errno);
 }
-
-void v_sem()
+int v_sem()
 {
      operacao[0].sem_num = 0;
      operacao[0].sem_op = -1;
@@ -106,7 +71,7 @@ void v_sem()
        printf("erro no p=%d\n", errno);
 }
 
-void p_sem2()
+int p_sem2()
 {
      operacao2[0].sem_num = 0;
      operacao2[0].sem_op = 1;
@@ -114,7 +79,7 @@ void p_sem2()
      if ( semop(id2sem, operacao2, 1) < 0)
        printf("erro no p=%d\n", errno);
 }
-void v_sem2()
+int v_sem2()
 {
      operacao2[0].sem_num = 0;
      operacao2[0].sem_op = -1;
@@ -193,75 +158,12 @@ void dbg(int val,char* str){
 	exit(1);
 }
 
-int checkTime(int i){
-
-	time_t s_time,c_time;
-	char start_time[9],current_time[9];
-	int s_time_secs,c_time_secs,running_time,max_time,remaining_time;
-
-	c_time = time(NULL);
-	s_time = pshm[i].start_time;
-
-	strftime(start_time,9,"%T",localtime(&s_time));
-	strftime(current_time,9,"%T",localtime(&c_time));
-
-	s_time_secs = str2sec(start_time);
-	c_time_secs = str2sec(current_time);
-
-	running_time = c_time_secs - s_time_secs;
-	max_time = str2sec(pshm[i].max_time);
-
-	remaining_time = max_time - running_time;
-	
-	if(remaining_time > 0){
-		return 0;/*Dentro do periodo estipulado*/
-	}else{
-		return 1;/*Estourou o tempo*/
-	}
-
-}
-
-int chooseReq(){
-
-	int i,shortest_time,p_time,chosen_req;
-	char start_time[9];
-
-
-	shortest_time = 86400;
-	chosen_req = -1;
-
-	for(i=0;i<NUM_TAB;i++){
-
-		if(pshm[i].status == PENDING){
-
-			strftime(start_time,9,"%T",localtime(&pshm[i].start_time));
-			p_time = str2sec(start_time);
-			
-			if(p_time < shortest_time){
-				shortest_time = p_time;
-				chosen_req = i;
-			}
-
-		}
-		
-
-	} 
-
-	if(chosen_req < 0){
-		return -1;
-	}else{
-		return chosen_req;
-	}
-
-
-}
 
 void scheduler_FIFO(){
 
-	int i,j,k,timeout,pid,status;
+	int i,j,k,pid,status;
 	int * processes_running;
 	PROG_T prog;
-	char cmd[50];
 
 
 	i = 0;
@@ -275,30 +177,15 @@ void scheduler_FIFO(){
 					proc_livres += pshm[i].num_proc;
 					/*printf("Liberando depois: %d\n",proc_livres);*/
 				v_sem2();
-			}else if((pshm[i].nreq > 0)&&(pshm[i].status == RUNNING)){
-				timeout = checkTime(i);
-				if(timeout){
-					
-					sprintf(cmd,"pkill -P %d",pshm[i].pid);
-					system(cmd);
-					kill(pshm[i].pid,SIGKILL);
-
-					pshm[i].nreq = 0;
-					pshm[i].status = FINISHED;
-					p_sem2();
-						proc_livres += pshm[i].num_proc;
-					v_sem2();
-
-				}
 			}
 		}
 	v_sem();
 
-	
+	i = 0;
 
 	p_sem();
 
-		i = chooseReq();
+	while((proc_livres > 0)&&(i < NUM_TAB)){
 		
 		if((pshm[i].nreq > 0)&&(pshm[i].status == PENDING)&&(pshm[i].num_proc <= proc_livres)){
 			
@@ -341,23 +228,16 @@ void scheduler_FIFO(){
 								pshm[i].nreq = -1;
 
 								exit(0);
+
 							}
 						}
 					}
 				}
-			}else{
-				pshm[i].pid = pid;
 			}
 		}
-		
-	v_sem();
-
-
-	for(i=0;i<NUM_TAB;i++){
-		if(pshm[i].status == FINISHED){
-			waitpid(pshm[i].pid,&status,WNOHANG);
-		}
+		i++;
 	}
+	v_sem();
 
 }
 
@@ -420,7 +300,7 @@ int main(int argc,char* argv[]){
 	}
 
 
-	while(p2shm->write_permission != NAO_PODE_ESCREVER){
+	while(1){
 		alarm(1);
 		sleep(2);
 	}

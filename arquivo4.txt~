@@ -1,0 +1,3 @@
+Program = loop
+Max_Time = 00:01:00
+N_proc = 1

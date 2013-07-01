@@ -1,0 +1,3 @@
+Program = pi 80
+Max_Time = 00:10:00
+N_proc = 4
