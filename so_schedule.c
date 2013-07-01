@@ -1,3 +1,32 @@
+/**
+
+Cainã Felipe Bento Razzolini - 09/0108094
+Yuri Cossich Lavinas - 09/0015266
+
+Compilador: gcc 4.6.3 
+	x86_64-Linux-gnu
+ 
+SO: Ubuntu 12.04 LTS 64 bits
+
+Algoritmo de escalonamento: FIFO
+	O escalonador irá buscar um arquivo na tabela de arquivos com o tempo de entrada mais antigo, caracterizando o FIFO. Só será
+executado um arquivo por vez, mesmo que o max_proc não esteja todo ocupado.
+
+Mecanismos PIC: 
+	Foram usados 2 tipos de mecanismos IPC, semáforos e memória compartilhada. E para cada tipo, foram usadas duas instâncias.
+	
+		1.As memórias compartilhadas foi utilizada para termos acesso a tabela e variáveis de controle de acesso e escrita.
+	Em idshm foi criada para conter a tabela de processos, enquanto id2shm foi criada para, qudndo so_shutdown for executado, podermos
+	evitar que novos processos possam ser ou executados ou entrarem na tabela de processos.
+
+		2.Já os semáforos foram utilizados para garantir que tenhamos somente um processo com acesso a dados/variáveis vitais.	
+	idsem foi criado para garantir acesso único as memórias compartilhadas. id2sem, para a quantidade de processos que podem ser alocados.
+
+As estruturas de dados:
+	INFO_T, PROCESSO_T, INFO_T, PROG_T, REQ_PIDS_T, PROCESSO_T, INFO_T, PROG_T REQ_PIDS_T
+
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
