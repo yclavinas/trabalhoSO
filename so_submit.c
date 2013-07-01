@@ -30,7 +30,6 @@ typedef struct processo{
 typedef struct info{
 	int write_permission;
 	int last_nreq;
-	int shutdown;
 }INFO_T;
 
 int p_sem()
