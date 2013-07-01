@@ -72,7 +72,7 @@ void v_sem(){
 /*ataches e destroies para remover os ICPS*/
 int destroy_IPCS(int id2shm){
 	int idshm;
-	struct shmid_ds *buf=0;
+	struct shmid_ds *buf;
 
 	/*Pegar o id para a area de mem compartilhada*/	
 	if ((idshm = shmget(90108094, sizeof(int), 0x1ff)) < 0){
