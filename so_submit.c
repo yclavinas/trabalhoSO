@@ -32,7 +32,7 @@ typedef struct info{
 	int last_nreq;
 }INFO_T;
 
-int p_sem()
+void p_sem()
 {
      operacao[0].sem_num = 0;
      operacao[0].sem_op = 1;
@@ -40,7 +40,7 @@ int p_sem()
      if ( semop(idsem, operacao, 1) < 0)
        printf("erro no p=%d\n", errno);
 }
-int v_sem()
+void v_sem()
 {
      operacao[0].sem_num = 0;
      operacao[0].sem_op = -1;
@@ -92,7 +92,7 @@ int main (int argc, char* argv[]){
 
 	FILE* fp;
 	char arqName[50], temp[50];
-	PROCESSO_T tab_processo[NUM_TAB], aux;
+	PROCESSO_T aux;
 	int idshm, id2shm;
 	INFO_T *p2shm;
 	PROCESSO_T *pshm,*paux;
@@ -164,7 +164,7 @@ int main (int argc, char* argv[]){
 				i++;
 			}
 
-			paux[i].nreq = ++p2shm->last_nreq;//ainda temos que arrumar isso
+			paux[i].nreq = ++p2shm->last_nreq;
 			strcpy(paux[i].max_time,aux.max_time);
 			paux[i].num_proc = aux.num_proc;
 			paux[i].start_time = aux.start_time;

@@ -1,3 +1,32 @@
+/**
+
+Cainã Felipe Bento Razzolini - 09/0108094
+Yuri Cossich Lavinas - 09/0015266
+
+Compilador: gcc 4.6.3 
+	x86_64-Linux-gnu
+ 
+SO: Ubuntu 12.04 LTS 64 bits
+
+Algoritmo de escalonamento: FIFO
+	O escalonador irá buscar um arquivo na tabela de arquivos com o tempo de entrada mais antigo, caracterizando o FIFO. Só será
+executado um arquivo por vez, mesmo que o max_proc não esteja todo ocupado.
+
+Mecanismos PIC: 
+	Foram usados 2 tipos de mecanismos IPC, semáforos e memória compartilhada. E para cada tipo, foram usadas duas instâncias.
+	
+		1.As memórias compartilhadas foi utilizada para termos acesso a tabela e variáveis de controle de acesso e escrita.
+	Em idshm foi criada para conter a tabela de processos, enquanto id2shm foi criada para, qudndo so_shutdown for executado, podermos
+	evitar que novos processos possam ser ou executados ou entrarem na tabela de processos.
+
+		2.Já os semáforos foram utilizados para garantir que tenhamos somente um processo com acesso a dados/variáveis vitais.	
+	idsem foi criado para garantir acesso único as memórias compartilhadas. id2sem, para a quantidade de processos que podem ser alocados.
+
+As estruturas de dados:
+	INFO_T, PROCESSO_T, INFO_T, PROG_T, REQ_PIDS_T, PROCESSO_T, INFO_T, PROG_T REQ_PIDS_T
+
+*/
+
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -24,7 +53,7 @@ typedef struct info{
 	int last_nreq;
 }INFO_T;
 
-int p_sem(){
+void p_sem(){
      operacao[0].sem_num = 0;
      operacao[0].sem_op = 1;
      operacao[0].sem_flg = 0;
@@ -32,7 +61,7 @@ int p_sem(){
        printf("erro no p=%d\n", errno);
 }
 
-int v_sem(){
+void v_sem(){
      operacao[0].sem_num = 0;
      operacao[0].sem_op = -1;
      operacao[0].sem_flg = 0;
@@ -44,8 +73,6 @@ int v_sem(){
 int destroy_IPCS(int id2shm){
 	int idshm;
 	struct shmid_ds *buf;
-	struct mensagem mensagem_rec;
-	int idfila;
 
 	/*Pegar o id para a area de mem compartilhada*/	
 	if ((idshm = shmget(90108094, sizeof(int), 0x1ff)) < 0){
@@ -54,10 +81,10 @@ int destroy_IPCS(int id2shm){
 	}
 	
 	/*da um msgget na fila para ter acesso */
-	//if (idfila = msgget(90014255, 0x1ff) < 0){
+	/*if (idfila = msgget(90014255, 0x1ff) < 0){
 	     //printf("erro no acesso fila\n");
 	     //exit(1);
-	//}
+	}*/
 	
 	shmctl(idshm,IPC_RMID, buf);
 	shmctl(id2shm,IPC_RMID, buf);
@@ -65,14 +92,11 @@ int destroy_IPCS(int id2shm){
 	semctl(id2sem,1,IPC_RMID, buf);
 	
 	/*Loop para acabar com os processos que estão em execucao, dando kill com o pid que pegarei da fila de msg*/
-	//while(msgrcv(idfila, &mensagem_rec, sizeof(mensagem_rec)-sizeof(long), 0, IPC_NOWAIT) != NULL){
-		//kill(mensagem_rec.pid_process, 9);
-	//}
-	
-	//tem que dar ctl na fila
+	/*while(msgrcv(idfila, &mensagem_rec, sizeof(mensagem_rec)-sizeof(long), 0, IPC_NOWAIT) != NULL){
+		kill(mensagem_rec.pid_process, 9);
+	}*/
 	
 	printf("Todos mecanismos IPC foram removidos\n");
-	//printf("Todos os processos terminaram\n");	
 	return 0;
 }
 

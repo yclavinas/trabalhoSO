@@ -28,7 +28,7 @@ typedef struct processo{
 int idsem;
 struct sembuf operacao[1];
 
-int p_sem()
+void p_sem()
 {
      operacao[0].sem_num = 0;
      operacao[0].sem_op = 1;
@@ -36,7 +36,7 @@ int p_sem()
      if ( semop(idsem, operacao, 1) < 0)
        printf("erro no p=%d\n", errno);
 }
-int v_sem()
+void v_sem()
 {
      operacao[0].sem_num = 0;
      operacao[0].sem_op = -1;
@@ -94,9 +94,8 @@ int main(){
 
 
 	int idshm;
-	PROCESSO_T *pshm,*paux;
-	struct tm * timeinfo;
-	char start_time[50],totaltime[10];
+	PROCESSO_T *pshm;
+	char totaltime[10];
 	int i;
 
 
